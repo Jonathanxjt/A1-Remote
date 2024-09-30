@@ -103,5 +103,3 @@ VALUES (140002, 'Susan.Goh@allinone.com.sg', 'Password123');
 INSERT INTO User (Staff_ID, Email, Password)
 VALUES (140894, 'Rahim.Khalid@allinone.com.sg', 'Password123');
 
-
-hi
