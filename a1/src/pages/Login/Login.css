@@ -1,0 +1,45 @@
+
+
+.login-page-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--background-color);
+  }
+  
+  .login-card {
+    width: 350px;
+  }
+  
+  .login-card-header,
+  .login-card-content {
+    text-align: left;
+  }
+  
+  .login-card-title {
+    font-size: 2rem;
+  }
+  
+  .login-card-description {
+    color: var(--text-muted-color);
+  }
+  
+  .login-input-group {
+    display: grid;
+    gap: 0.5rem;
+  }
+  
+  .input-error {
+    border-color: red;
+  }
+  
+  .error-text {
+    color: red;
+    font-size: 0.875rem;
+  }
+  
+.login-label
+{
+  font-weight: 600 !important;
+}
