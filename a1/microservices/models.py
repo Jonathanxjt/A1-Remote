@@ -100,15 +100,19 @@ class WorkRequest(db.Model):
     approval_manager_id = db.Column(db.Integer, db.ForeignKey('employee.staff_id'))
     decision_date = db.Column(db.DateTime)
     comments = db.Column(db.Text)
+    created_date = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
 
     staff = db.relationship('Employee', foreign_keys=[staff_id], backref='requests')
     approval_manager = db.relationship('Employee', foreign_keys=[approval_manager_id], backref='approved_requests')
 
-    def __init__(self, staff_id, request_type, reason=None, approval_manager_id=None, status='Pending'):
+    def __init__(self, staff_id, request_type, request_date, approval_manager_id, reason, comments = None, decision_date = None, status='Pending'):
         self.staff_id = staff_id
         self.request_type = request_type
+        self.request_date = request_date
         self.reason = reason
         self.approval_manager_id = approval_manager_id
+        self.decision_date = decision_date
+        self.comments = comments
         self.status = status
 
     def json(self):
@@ -121,7 +125,8 @@ class WorkRequest(db.Model):
             'status': self.status,
             'approval_manager_id': self.approval_manager_id,
             'decision_date': self.decision_date,
-            'comments': self.comments
+            'comments': self.comments,
+            'created_date': self.created_date
         }
 
 
@@ -131,30 +136,31 @@ class Schedule(db.Model):
     schedule_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     staff_id = db.Column(db.Integer, db.ForeignKey('employee.staff_id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
-    location = db.Column(db.String(50), nullable=False)
     request_id = db.Column(db.Integer, db.ForeignKey('work_request.request_id'))
-    created_by = db.Column(db.Integer, db.ForeignKey('employee.staff_id'), nullable=False)
-    created_date = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    approved_by = db.Column(db.Integer, db.ForeignKey('employee.staff_id'))
+    request_type = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default='Pending', nullable=False)
 
     staff = db.relationship('Employee', foreign_keys=[staff_id], backref='schedules')
-    creator = db.relationship('Employee', foreign_keys=[created_by], backref='created_schedules')
+    manager = db.relationship('Employee', foreign_keys=[approved_by], backref='created_schedules')
 
-    def __init__(self, staff_id, date, location, created_by, request_id=None):
+    def __init__(self, staff_id, date, approved_by, request_type, request_id, status = "Pending"):
         self.staff_id = staff_id
         self.date = date
-        self.location = location
-        self.created_by = created_by
+        self.approved_by = approved_by
         self.request_id = request_id
+        self.request_type = request_type
+        self.status = status
 
     def json(self):
         return {
             'schedule_id': self.schedule_id,
             'staff_id': self.staff_id,
             'date': self.date,
-            'location': self.location,
             'request_id': self.request_id,
-            'created_by': self.created_by,
-            'created_date': self.created_date
+            'approved_by': self.approved_by,
+            'request_type': self.request_type,
+            'status': self.status
         }
 
 
