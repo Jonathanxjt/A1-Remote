@@ -1,19 +1,17 @@
-"use client";
-
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const months = [
   "January",
   "February",
@@ -27,121 +25,85 @@ const months = [
   "October",
   "November",
   "December",
-];
+]
 
 const sampleEvents = [
-  {
-    id: 1,
-    date: new Date(2023, 9, 5),
-    title: "Team Meeting",
-    time: "10:00 AM",
-  },
-  {
-    id: 2,
-    date: new Date(2023, 9, 10),
-    title: "Project Deadline",
-    time: "11:00 AM",
-  },
-  {
-    id: 3,
-    date: new Date(2023, 9, 15),
-    title: "Client Presentation",
-    time: "2:00 PM",
-  },
-  {
-    id: 4,
-    date: new Date(2023, 9, 20),
-    title: "Conference Call",
-    time: "3:30 PM",
-  },
-  {
-    id: 5,
-    date: new Date(2023, 9, 25),
-    title: "Team Building",
-    time: "4:00 PM",
-  },
-];
+  { id: 1, date: new Date(2023, 9, 5), title: "Team Meeting", time: "10:00 AM" },
+  { id: 2, date: new Date(2023, 9, 10), title: "Project Deadline", time: "11:00 AM" },
+  { id: 3, date: new Date(2023, 9, 15), title: "Client Presentation", time: "2:00 PM" },
+  { id: 4, date: new Date(2023, 9, 20), title: "Conference Call", time: "3:30 PM" },
+  { id: 5, date: new Date(2023, 9, 25), title: "Team Building", time: "4:00 PM" },
+]
 
 export default function Component() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState("month");
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentView, setCurrentView] = useState("month")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    return { daysInMonth, firstDayOfMonth };
-  };
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const firstDayOfMonth = new Date(year, month, 1).getDay()
+    return { daysInMonth, firstDayOfMonth }
+  }
 
-  const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentDate);
+  const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentDate)
 
   const prevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
-  };
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+  }
 
   const nextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
-  };
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+  }
 
   const renderMonthView = () => {
-    const days = [];
+    const days = []
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(
-        <div key={`empty-${i}`} className="p-2 border border-gray-200" />
-      );
+      days.push(<div key={`empty-${i}`} className="p-2 border border-gray-200" />)
     }
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      );
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const events = sampleEvents.filter(
         (event) =>
           event.date.getDate() === day &&
           event.date.getMonth() === currentDate.getMonth() &&
           event.date.getFullYear() === currentDate.getFullYear()
-      );
+      )
+      const isSelected = selectedDate && 
+        selectedDate.getDate() === day && 
+        selectedDate.getMonth() === currentDate.getMonth() && 
+        selectedDate.getFullYear() === currentDate.getFullYear()
+
       days.push(
-        <div key={day} className="p-2 border border-gray-200 min-h-[120px]">
-          <div className="font-semibold">{day}</div>
+        <div
+          key={day}
+          className={`p-2 border border-gray-200 min-h-[100px] cursor-pointer transition-colors duration-200 
+            ${isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+          onClick={() => setSelectedDate(date)}
+        >
+          <div className={`font-semibold ${isSelected ? 'text-blue-600' : ''}`}>{day}</div>
           {events.map((event) => (
-            <div
-              key={event.id}
-              className="text-xs mt-1 bg-blue-100 p-1 rounded"
-            >
+            <div key={event.id} className="text-xs mt-1 bg-blue-200 p-1 rounded">
               <div className="font-semibold">{event.title}</div>
               <div>{event.time}</div>
             </div>
           ))}
         </div>
-      );
+      )
     }
-    return days;
-  };
+    return days
+  }
 
   const renderDayView = () => {
-    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const hours = Array.from({ length: 24 }, (_, i) => i)
     return (
       <div className="grid grid-cols-1 gap-1">
         {hours.map((hour) => (
-          <div
-            key={hour}
-            className="flex items-center border-b border-gray-200 py-2"
-          >
+          <div key={hour} className="flex items-center border-b border-gray-200 py-2">
             <div className="w-16 text-right pr-2 text-sm text-gray-500">
-              {hour === 0
-                ? "12 AM"
-                : hour < 12
-                ? `${hour} AM`
-                : hour === 12
-                ? "12 PM"
-                : `${hour - 12} PM`}
+              {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
             </div>
             <div className="flex-grow h-8 relative">
               {sampleEvents
@@ -165,48 +127,33 @@ export default function Component() {
           </div>
         ))}
       </div>
-    );
-  };
+    )
+  }
 
   const renderWeekView = () => {
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const startOfWeek = new Date(currentDate)
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
     const weekDays = Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      return day;
-    });
+      const day = new Date(startOfWeek)
+      day.setDate(startOfWeek.getDate() + i)
+      return day
+    })
 
     return (
       <div className="grid grid-cols-8 gap-1">
         <div className="border-b border-gray-200 p-2"></div>
         {weekDays.map((day, index) => (
-          <div
-            key={index}
-            className="border-b border-gray-200 p-2 text-center font-semibold"
-          >
+          <div key={index} className="border-b border-gray-200 p-2 text-center font-semibold">
             {daysOfWeek[day.getDay()]} {day.getDate()}
           </div>
         ))}
         {Array.from({ length: 24 }, (_, hour) => (
           <>
-            <div
-              key={`hour-${hour}`}
-              className="border-b border-gray-200 p-2 text-sm text-gray-500"
-            >
-              {hour === 0
-                ? "12 AM"
-                : hour < 12
-                ? `${hour} AM`
-                : hour === 12
-                ? "12 PM"
-                : `${hour - 12} PM`}
+            <div key={`hour-${hour}`} className="border-b border-gray-200 p-2 text-sm text-gray-500">
+              {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
             </div>
             {weekDays.map((day, dayIndex) => (
-              <div
-                key={`${hour}-${dayIndex}`}
-                className="border-b border-gray-200 p-2 relative"
-              >
+              <div key={`${hour}-${dayIndex}`} className="border-b border-gray-200 p-2 relative">
                 {sampleEvents
                   .filter(
                     (event) =>
@@ -229,16 +176,14 @@ export default function Component() {
           </>
         ))}
       </div>
-    );
-  };
+    )
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <header className="bg-white shadow-sm py-4 px-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Calendar Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-800">Calendar Dashboard</h1>
           <Button>
             <Plus className="mr-2 h-4 w-4" /> Add Event
           </Button>
@@ -246,11 +191,7 @@ export default function Component() {
       </header>
       <main className="flex-grow p-6">
         <Card className="w-full h-full">
-          <Tabs
-            value={currentView}
-            onValueChange={setCurrentView}
-            className="w-full h-full flex flex-col"
-          >
+          <Tabs value={currentView} onValueChange={setCurrentView} className="w-full h-full flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <TabsList>
                 <TabsTrigger value="day">Day</TabsTrigger>
@@ -271,9 +212,7 @@ export default function Component() {
               <Select
                 value={currentDate.getMonth().toString()}
                 onValueChange={(value) =>
-                  setCurrentDate(
-                    new Date(currentDate.getFullYear(), parseInt(value), 1)
-                  )
+                  setCurrentDate(new Date(currentDate.getFullYear(), parseInt(value), 1))
                 }
               >
                 <SelectTrigger className="w-[180px]">
@@ -309,6 +248,13 @@ export default function Component() {
           </Tabs>
         </Card>
       </main>
+      {selectedDate && (
+        <footer className="bg-white shadow-sm py-4 px-6 mt-4">
+          <p className="text-lg font-semibold">
+            Selected Date: {selectedDate.toDateString()}
+          </p>
+        </footer>
+      )}
     </div>
-  );
+  )
 }
