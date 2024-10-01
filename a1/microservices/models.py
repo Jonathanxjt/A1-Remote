@@ -1,22 +1,7 @@
-from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship
-from os import environ
-from flask_cors import CORS
-import os
-import sys
-
-app = Flask(__name__)
-
-# Configure your database URL (e.g., MySQL)
-app.config["SQLALCHEMY_DATABASE_URI"] = environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:3306/a1_database"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database
-db = SQLAlchemy(app)
-CORS(app)
-
+db = SQLAlchemy()
 
 class Role(db.Model):
     __tablename__ = 'role'
@@ -202,5 +187,3 @@ class Audit(db.Model):
             'comments': self.comments
         }
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)

@@ -103,3 +103,10 @@ VALUES (140002, 'Susan.Goh@allinone.com.sg', 'Password123');
 INSERT INTO User (Staff_ID, Email, Password)
 VALUES (140894, 'Rahim.Khalid@allinone.com.sg', 'Password123');
 
+INSERT INTO Work_Request (Staff_ID, Request_Type, Request_Date, Reason, Status, Approval_Manager_ID, Decision_Date, Comments)
+VALUES 
+(150318, 'Leave', '2023-10-01 09:00:00', 'Annual leave request for 5 days', 'Pending', 150200, NULL, 'First request this year'),
+(150318, 'Remote Work', '2023-09-15 10:30:00', 'Remote work for family care', 'Approved', 150150, '2023-09-16 08:00:00', 'Approved by manager'),
+(150318, 'Overtime', '2023-09-20 18:30:00', 'Overtime for project deadline', 'Pending', 150150, NULL, 'Requires approval for extra hours');
+
+
