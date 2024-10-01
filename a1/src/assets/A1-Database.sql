@@ -41,6 +41,7 @@ CREATE TABLE Work_Request (
     Approval_Manager_ID INT,
     Decision_Date DATETIME,
     Comments TEXT,
+    Created_Date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Staff_ID) REFERENCES Employee(Staff_ID),
     FOREIGN KEY (Approval_Manager_ID) REFERENCES Employee(Staff_ID)
 );
@@ -49,13 +50,13 @@ CREATE TABLE Schedule (
     Schedule_ID INT PRIMARY KEY AUTO_INCREMENT,
     Staff_ID INT NOT NULL,
     Date DATE NOT NULL,
-    Location VARCHAR(50) NOT NULL,
     Request_ID INT,
-    Created_By INT NOT NULL,
-    Created_Date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Approved_By INT,
+    Request_Type VARCHAR(20) NOT NULL,
+    Status VARCHAR(20) NOT NULL DEFAULT 'Pending',
     FOREIGN KEY (Staff_ID) REFERENCES Employee(Staff_ID),
     FOREIGN KEY (Request_ID) REFERENCES Work_Request(Request_ID),
-    FOREIGN KEY (Created_By) REFERENCES Employee(Staff_ID)
+    FOREIGN KEY (Approved_By) REFERENCES Employee(Staff_ID)
 );
 
 CREATE TABLE Audit (
@@ -102,5 +103,30 @@ VALUES (140002, 'Susan.Goh@allinone.com.sg', 'Password123');
 
 INSERT INTO User (Staff_ID, Email, Password)
 VALUES (140894, 'Rahim.Khalid@allinone.com.sg', 'Password123');
+
+INSERT INTO User (Staff_ID, Email, Password)
+VALUES (150318, 'Emma.Tan@allinone.com.sg', 'Password123');
+
+INSERT INTO User (Staff_ID, Email, Password)
+VALUES (151408, 'Philip.Lee@allinone.com.sg', 'Password123');
+
+INSERT INTO Work_Request (Request_ID, Staff_ID, Request_Type, Request_Date, Reason, Status, Approval_Manager_ID, Decision_Date, Comments, Created_Date)
+VALUES 
+(1, 150318, 'Full Day', '2024-10-15', '-', 'Pending', 151408, NULL, '', '2024-10-05'),
+(2, 150318, 'AM', '2024-10-16', '-', 'Pending', 151408, NULL, '', '2024-10-05'),
+(3, 150318, 'PM', '2024-10-17', '-', 'Pending', 151408, NULL, '', '2024-10-05'),
+(4, 150318, 'Full Day', '2024-10-18', '-', 'Approved', 151408, '2024-10-11', '', '2024-10-05'),
+(5, 150318, 'Full Day', '2024-10-19', '-', 'Rejected', 151408, '2024-10-11', 'You need to work more in office.', '2024-10-05');
+
+INSERT INTO Schedule (Schedule_ID, Staff_ID, Date, Request_ID, Approved_By, Request_Type, Status)
+VALUES 
+(1, 150318, '2024-10-15', 1, 151408, 'Full Day', 'Pending'),
+(2, 150318, '2024-10-16', 2, 151408, 'AM', 'Pending'),
+(3, 150318, '2024-10-17', 3, 151408, 'PM', 'Pending'),
+(4, 150318, '2024-10-18', 4, 151408, 'Full Day', 'Approved'),
+(5, 150318, '2024-10-19', 5, 151408, 'Full Day', 'Rejected');
+
+
+
 
 
