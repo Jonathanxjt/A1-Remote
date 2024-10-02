@@ -1,34 +1,26 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import viteLogo from "/vite.svg";
-import "./App.css";
-import { Button } from "@/components/ui/button";
-import Sidebar from "@/components/Sidebar/Sidebar";
-import Login from "./pages/Login/Login";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Sidebar from './components/Sidebar/Sidebar';
+import RequestPage from './pages/RequestPage/request';
+import Home from './pages/Home'; // Import the Home component
+import './App.css';
 
-function App() {
-
-
+const App: React.FC = () => {
   return (
     <div className="maincontainer"> {/* ensures that the sidebar does not cover the main-content */}
-    <Sidebar />
-    <div className="main-content">
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Sidebar /> 
+      <div className="main-content">
+        <Routes>
+          <Route path="/" element={<Home />} /> {/* Default route */}
+          <Route path="/requestpage" element={<RequestPage />} /> {/*requestPage route */}
+          {/* Add other routes here */}
+        </Routes>
       </div>
-
-      
       <footer className="footer">
         <p>Footer Content</p> {/* TODO: come up with the footer content */}
       </footer>
     </div>
   );
-}
+};
 
 export default App;
