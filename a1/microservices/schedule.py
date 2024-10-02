@@ -66,6 +66,41 @@ def get_manager_schedule(staff_id):
         ), 200
     return jsonify({"code": 404, "message": "There are no schedule found."}), 404
 
+# Get Employee's Schedule Using Email
+@app.route("/schedule_email/<string:email>/employee")
+def get_employee_schedule_email(email):
+    staff_id = db.session.query(Employee).filter_by(email=email).first().staff_id
+    schedule = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
+    if schedule:
+        return jsonify(
+            {
+                "code": 200,
+                "data": {"work_request": [s.json() for s in schedule]},
+            }
+        )
+    return jsonify({"code": 404, "message": "There are no Schedule."}), 404
+
+# To get both employee and manager schedule using email
+@app.route("/schedule_email/<string:email>/manager")
+def get_manager_schedule_email(email):
+    staff_id = db.session.query(Employee).filter_by(email=email).first().staff_id
+    manager_schedule = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
+    team_schedule = db.session.query(Schedule).filter_by(approved_by=staff_id).all()
+
+    combined_schedule = manager_schedule + team_schedule
+
+    if len(combined_schedule) > 0:
+        return jsonify(
+            {
+                "code": 200,
+                "data": {
+                    "manager_schedule": [s.json() for s in manager_schedule],
+                    "team_schedule": [s.json() for s in team_schedule],
+                },
+            }
+        ), 200
+    return jsonify({"code": 404, "message": "There are no schedule found."}), 404
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5004, debug=True)

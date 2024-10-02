@@ -56,5 +56,33 @@ def get_manager_work_requests(approval_manager_id):
         )
     return jsonify({"code": 404, "message": "There are no Requests."}), 404
 
+
+@app.route("/email_request/<string:email>/employee")
+def get_employee_work_requests_email(email):
+    staff_id = db.session.query(Employee).filter_by(email=email).first().staff_id
+    work_request = db.session.query(WorkRequest).filter_by(staff_id=staff_id).all()
+    if work_request:
+        return jsonify(
+            {
+                "code": 200,
+                "data": {"work_request": [request.json() for request in work_request]},
+            }
+        )
+    return jsonify({"code": 404, "message": "There are no Requests."}), 404
+
+
+@app.route("/email_request/<string:email>/manager")
+def get_manager_work_requests_email(email):
+    approval_manager_id = db.session.query(Employee).filter_by(email=email).first().staff_id
+    work_request = db.session.query(WorkRequest).filter_by(approval_manager_id = approval_manager_id).all()
+    if work_request:
+        return jsonify(
+            {
+                "code": 200,
+                "data": {"work_request": [request.json() for request in work_request]},
+            }
+        )
+    return jsonify({"code": 404, "message": "There are no Requests."}), 404
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5003, debug=True)
