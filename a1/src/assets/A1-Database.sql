@@ -1,3 +1,7 @@
+-- ! Drop the database if it already exists
+DROP DATABASE IF EXISTS a1_database;
+
+
 CREATE DATABASE a1_database;
 USE a1_database;
 
@@ -71,20 +75,15 @@ CREATE TABLE Audit (
 );
 
 INSERT INTO Role (Role, Role_Name, Role_Description)
-VALUES (1, 'HR', NULL);
-
-INSERT INTO Role (Role, Role_Name, Role_Description)
-VALUES (2, 'Staff', NULL);
-
-INSERT INTO Role (Role, Role_Name, Role_Description)
-VALUES (3, 'Manager', NULL);
-
+VALUES (1, 'HR', NULL), 
+       (2, 'Staff', NULL), 
+       (3, 'Manager', NULL);
 ALTER TABLE Employee MODIFY Reporting_Manager INT NULL;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
-LOAD DATA INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
+LOAD DATA INFILE 'a1/src/assets/employeenew.csv'
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n' 
