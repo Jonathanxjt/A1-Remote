@@ -33,7 +33,7 @@ def get_all():
     return jsonify({"code": 404, "message": "There are no users."}), 404
 
 @app.route("/user/<int:staff_id>")
-def get_attendee_by_EID(staff_id):
+def get_user_by_staff_id(staff_id):
     userlist = db.session.scalars(db.select(User).filter_by(staff_id=staff_id)).all()
 
     if len(userlist):
@@ -47,6 +47,20 @@ def get_attendee_by_EID(staff_id):
         )
     return jsonify({"code": 404, "message": "There are no attendees."}), 404
 
+@app.route("/user_email/<string:email>")
+def get_user_by_email(email):
+    userlist = db.session.scalars(db.select(User).filter_by(email=email)).all()
+
+    if len(userlist):
+        return jsonify(
+            {
+                "code": 200,
+                "data": {
+                    "user": [user.json() for user in userlist]
+                },
+            }
+        )
+    return jsonify({"code": 404, "message": "There are no attendees."}), 404
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
