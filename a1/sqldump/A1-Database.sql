@@ -1,14 +1,15 @@
-CREATE DATABASE a1_database;
-USE a1_database;
+-- CREATE DATABASE a1_database;
 
-CREATE TABLE Role (
+USE a1database;
+
+CREATE TABLE role (
     Role INT PRIMARY KEY AUTO_INCREMENT,
     Role_Name VARCHAR(50) NOT NULL UNIQUE,
     Role_Description TEXT
 );
 
 
-CREATE TABLE Employee (
+CREATE TABLE employee (
     Staff_ID INT PRIMARY KEY AUTO_INCREMENT,
     Staff_FName VARCHAR(50) NOT NULL,
     Staff_LName VARCHAR(50) NOT NULL,
@@ -22,7 +23,7 @@ CREATE TABLE Employee (
     FOREIGN KEY (Role) REFERENCES Role(Role)
 );
 
-CREATE TABLE User (
+CREATE TABLE user (
     Staff_ID INT PRIMARY KEY AUTO_INCREMENT,
     Email VARCHAR(50) NOT NULL UNIQUE,
     Password VARCHAR(255) NOT NULL,
@@ -31,7 +32,7 @@ CREATE TABLE User (
 );
 
 
-CREATE TABLE Work_Request (
+CREATE TABLE work_request (
     Request_ID INT PRIMARY KEY AUTO_INCREMENT,
     Staff_ID INT NOT NULL,
     Request_Type VARCHAR(20) NOT NULL,
@@ -46,7 +47,7 @@ CREATE TABLE Work_Request (
     FOREIGN KEY (Approval_Manager_ID) REFERENCES Employee(Staff_ID)
 );
 
-CREATE TABLE Schedule (
+CREATE TABLE schedule (
     Schedule_ID INT PRIMARY KEY AUTO_INCREMENT,
     Staff_ID INT NOT NULL,
     Date DATE NOT NULL,
@@ -59,7 +60,7 @@ CREATE TABLE Schedule (
     FOREIGN KEY (Approved_By) REFERENCES Employee(Staff_ID)
 );
 
-CREATE TABLE Audit (
+CREATE TABLE audit (
     Log_ID INT PRIMARY KEY AUTO_INCREMENT,
     Request_ID INT NOT NULL,
     Manager_ID INT NOT NULL,
@@ -84,7 +85,7 @@ ALTER TABLE Employee MODIFY Reporting_Manager INT NULL;
 SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
-LOAD DATA INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
+LOAD DATA LOCAL INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n' 

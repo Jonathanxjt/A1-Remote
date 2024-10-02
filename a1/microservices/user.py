@@ -5,6 +5,10 @@ from sqlalchemy.orm import relationship
 from os import environ
 from flask_cors import CORS
 from models import *
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 import os
 import sys
@@ -12,8 +16,7 @@ import sys
 app = Flask(__name__)
 
 # Configure your database URL (e.g., MySQL)
-# app.config["SQLALCHEMY_DATABASE_URI"] = environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:3306/a1_database"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database
@@ -45,7 +48,7 @@ def get_user_by_staff_id(staff_id):
                 },
             }
         )
-    return jsonify({"code": 404, "message": "There are no attendees."}), 404
+    return jsonify({"code": 404, "message": "There are no users."}), 404
 
 @app.route("/user_email/<string:email>")
 def get_user_by_email(email):
@@ -60,7 +63,7 @@ def get_user_by_email(email):
                 },
             }
         )
-    return jsonify({"code": 404, "message": "There are no attendees."}), 404
+    return jsonify({"code": 404, "message": "There are no users."}), 404
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
