@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
 import "./Login.css";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import axios from "axios";
+import "./Login.css";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,31 +41,10 @@ export default function LoginPage() {
     setError({ email: emailError, password: passwordError });
 
     if (valid) {
-      try {
-        // Make the request to the Flask backend for authentication
-        const response = await axios.post("http://localhost:5001/authenticate", {
-          email,
-          password,
-        });
-
-        if (response.data.code === 200) {
-          // Authentication successful
-          console.log("Sign In Successful");
-
-          // Store the staff_id in sessionStorage
-          const staffId = response.data.data.user.staff_id;
-          console.log(response.data.data.user);
-          console.log("staff_id:", staffId);
-          sessionStorage.setItem('staff_id', staffId);
-
-          setEmail("");
-          setPassword("");
-        } else {
-          console.log("Authentication failed");
-        }
-      } catch (error) {
-        console.error("Error during authentication", error);
-      }
+      // Handle the sign-in logic here
+      setEmail("");
+      setPassword("");
+      console.log("Sign In Successful");
     }
   };
 
