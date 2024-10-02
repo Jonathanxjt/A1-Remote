@@ -51,7 +51,6 @@ export default function LoginPage() {
           console.log("staff_id:", staffId);
           sessionStorage.setItem('staff_id', staffId);
 
-          // Perform other actions (e.g., redirect, clear input fields)
           setEmail("");
           setPassword("");
         } else {

@@ -1,7 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar/Sidebar';
 import RequestPage from './pages/RequestPage/request';
+import Login from './pages/Login/Login';
+import NotFound from './pages/NotFound';
 import Home from './pages/Home'; // Import the Home component
 import './App.css';
 
@@ -12,8 +14,9 @@ const App: React.FC = () => {
       <div className="main-content">
         <Routes>
           <Route path="/" element={<Home />} /> {/* Default route */}
+          <Route path="/login" element={<Login />} /> {/* Login route */}
           <Route path="/requestpage" element={<RequestPage />} /> {/*requestPage route */}
-          {/* Add other routes here */}
+          <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
       </div>
       <footer className="footer">
