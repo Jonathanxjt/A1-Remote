@@ -1,0 +1,36 @@
+.request-page form label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 1.25rem; 
+}
+
+.request-page form input,
+.request-page form select {
+    padding: 12px; 
+    font-size: 1.25rem; 
+    width: 30%; 
+    box-sizing: border-box; 
+    background-color: black; 
+    color: white; 
+    border: 1px solid #ccc; 
+    border-radius: 4px;
+}
+
+.request-page form button {
+    padding: 12px; 
+    font-size: 1.25rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px; 
+}
+
+.request-page form button:hover {
+    background-color: #0056b3;
+}
+
+.request-page .error {
+    color: red;
+    font-size: 1.25rem; 
+}
