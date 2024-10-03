@@ -1,44 +1,87 @@
-import { useState } from "react"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import axios from "axios"
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ]
 
-const sampleEvents = [
-  { id: 1, date: new Date(2023, 9, 5), title: "Team Meeting", time: "10:00 AM" },
-  { id: 2, date: new Date(2023, 9, 10), title: "Project Deadline", time: "11:00 AM" },
-  { id: 3, date: new Date(2023, 9, 15), title: "Client Presentation", time: "2:00 PM" },
-  { id: 4, date: new Date(2023, 9, 20), title: "Conference Call", time: "3:30 PM" },
-  { id: 5, date: new Date(2023, 9, 25), title: "Team Building", time: "4:00 PM" },
-]
+type WorkStatus = "AM" | "PM" | "Full Day" | "Pending" | null
+
+interface WorkRequest {
+  id: number
+  date: Date
+  title: string
+  type: WorkStatus
+  status: WorkStatus
+  reportingManager: string
+}
+
+interface Employee {
+  id: number
+  name: string
+  status: "In Office" | "WFH" | "On Leave"
+  reportingManager: string
+}
 
 export default function Component() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [currentView, setCurrentView] = useState("month")
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [workRequests, setWorkRequests] = useState<WorkRequest[]>([])
+  const [currentDateTime, setCurrentDateTime] = useState(new Date())
+  const [employees, setEmployees] = useState<Employee[]>([])
+
+  const parseDate = (dateStr: string): Date => {
+    return new Date(dateStr)
+  }
+
+  useEffect(() => {
+    const fetchWorkRequests = async () => {
+      try {
+        const response = await axios.get("http://localhost:5003/work_request/150318/employee")
+        if (response.data.code === 200) {
+          const requests = response.data.data.work_request
+            .filter((request: any) => request.status === "Approved" || request.status === "Pending")
+            .map((request: any) => ({
+              id: request.request_id,
+              date: parseDate(request.request_date),
+              title: request.reason,
+              type: request.request_type as WorkStatus,
+              status: request.status === "Pending" ? "Pending" : request.request_type as WorkStatus,
+              reportingManager: request.reporting_manager || "Unknown"
+            }))
+          setWorkRequests(requests)
+        } else {
+          console.log("No work requests found.")
+        }
+      } catch (error) {
+        console.error("Error fetching work requests:", error)
+      }
+    }
+
+    fetchWorkRequests()
+
+    // Mock employee data - replace with actual API call
+    setEmployees([
+      { id: 1, name: "John Doe", status: "In Office", reportingManager: "Jane Smith" },
+      { id: 2, name: "Alice Johnson", status: "WFH", reportingManager: "Bob Brown" },
+      { id: 3, name: "Charlie Davis", status: "On Leave", reportingManager: "Jane Smith" },
+    ])
+
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -58,74 +101,128 @@ export default function Component() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
   }
 
+  const getStatusBadge = (status: WorkStatus) => {
+    if (!status) return null
+    const colorMap = {
+      "AM": "bg-green-500",
+      "PM": "bg-green-500",
+      "Full Day": "bg-green-500",
+      "Pending": "bg-yellow-500",
+    }
+    return (
+      <Badge className={`${colorMap[status]} text-white text-xs px-1 py-0.5 rounded`}>
+        {status}
+      </Badge>
+    )
+  }
+
   const renderMonthView = () => {
     const days = []
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<div key={`empty-${i}`} className="p-2 border border-gray-200" />)
+    const today = new Date()
+    const prevMonthDays = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
+
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const day = prevMonthDays - i
+      days.push(
+        <div key={`prev-${day}`} className="p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] bg-gray-100 opacity-50">
+          <div className="font-semibold text-gray-400 text-sm sm:text-base">{day}</div>
+        </div>
+      )
     }
+
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const events = sampleEvents.filter(
-        (event) =>
-          event.date.getDate() === day &&
-          event.date.getMonth() === currentDate.getMonth() &&
-          event.date.getFullYear() === currentDate.getFullYear()
+      const dayOfWeek = date.getDay()
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+      const dayStatus = workRequests.find(
+        (request) =>
+          request.date.getDate() === day &&
+          request.date.getMonth() === currentDate.getMonth() &&
+          request.date.getFullYear() === currentDate.getFullYear()
       )
-      const isSelected = selectedDate && 
-        selectedDate.getDate() === day && 
-        selectedDate.getMonth() === currentDate.getMonth() && 
+
+      const isSelected = selectedDate &&
+        selectedDate.getDate() === day &&
+        selectedDate.getMonth() === currentDate.getMonth() &&
         selectedDate.getFullYear() === currentDate.getFullYear()
+
+      const isToday = today.getDate() === day &&
+        today.getMonth() === currentDate.getMonth() &&
+        today.getFullYear() === currentDate.getFullYear()
 
       days.push(
         <div
           key={day}
-          className={`p-2 border border-gray-200 min-h-[100px] cursor-pointer transition-colors duration-200 
-            ${isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-          onClick={() => setSelectedDate(date)}
+          className={`p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] cursor-pointer transition-colors duration-200 
+            ${isWeekend ? 'bg-gray-300 cursor-not-allowed opacity-60' : isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+          onClick={() => {
+            if (!isWeekend) {
+              setSelectedDate(date)
+            }
+          }}
         >
-          <div className={`font-semibold ${isSelected ? 'text-blue-600' : ''}`}>{day}</div>
-          {events.map((event) => (
-            <div key={event.id} className="text-xs mt-1 bg-blue-200 p-1 rounded">
-              <div className="font-semibold">{event.title}</div>
-              <div>{event.time}</div>
+          <div className="flex justify-between items-start">
+            <div className={`font-semibold ${isSelected ? 'text-blue-600' : ''} ${isToday ? 'rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center' : ''} text-sm sm:text-base`}>
+              {day}
             </div>
-          ))}
+            {dayStatus && getStatusBadge(dayStatus.status)}
+          </div>
+          <div className="mt-1 space-y-1">
+          </div>
         </div>
       )
     }
+
+    const remainingDays = 7 - ((firstDayOfMonth + daysInMonth) % 7)
+    if (remainingDays < 7) {
+      for (let day = 1; day <= remainingDays; day++) {
+        days.push(
+          <div key={`next-${day}`} className="p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] bg-gray-100 opacity-50">
+            <div className="font-semibold text-gray-400 text-sm sm:text-base">{day}</div>
+          </div>
+        )
+      }
+    }
+
     return days
   }
 
   const renderDayView = () => {
-    const hours = Array.from({ length: 24 }, (_, i) => i)
     return (
-      <div className="grid grid-cols-1 gap-1">
-        {hours.map((hour) => (
-          <div key={hour} className="flex items-center border-b border-gray-200 py-2">
-            <div className="w-16 text-right pr-2 text-sm text-gray-500">
-              {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-            </div>
-            <div className="flex-grow h-8 relative">
-              {sampleEvents
-                .filter(
-                  (event) =>
-                    event.date.getDate() === currentDate.getDate() &&
-                    event.date.getMonth() === currentDate.getMonth() &&
-                    event.date.getFullYear() === currentDate.getFullYear() &&
-                    parseInt(event.time.split(":")[0]) === (hour % 12 || 12)
-                )
-                .map((event) => (
-                  <div
-                    key={event.id}
-                    className="absolute left-0 right-0 bg-blue-100 p-1 rounded text-xs"
-                    style={{ top: "0" }}
-                  >
-                    {event.title} - {event.time}
-                  </div>
-                ))}
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent>
+            <h3 className="font-bold mb-2">In Office</h3>
+            {employees.filter(e => e.status === "In Office").map(employee => (
+              <div key={employee.id} className="mb-2">
+                <p>{employee.name}</p>
+                <p className="text-sm text-gray-500">Manager: {employee.reportingManager}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <h3 className="font-bold mb-2">Working From Home</h3>
+            {employees.filter(e => e.status === "WFH").map(employee => (
+              <div key={employee.id} className="mb-2">
+                <p>{employee.name}</p>
+                <p className="text-sm text-gray-500">Manager: {employee.reportingManager}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <h3 className="font-bold mb-2">On Leave</h3>
+            {employees.filter(e => e.status === "On Leave").map(employee => (
+              <div key={employee.id} className="mb-2">
+                <p>{employee.name}</p>
+                <p className="text-sm text-gray-500">Manager: {employee.reportingManager}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -133,76 +230,60 @@ export default function Component() {
   const renderWeekView = () => {
     const startOfWeek = new Date(currentDate)
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
-    const weekDays = Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(startOfWeek)
-      day.setDate(startOfWeek.getDate() + i)
-      return day
-    })
-
+    
     return (
-      <div className="grid grid-cols-8 gap-1">
-        <div className="border-b border-gray-200 p-2"></div>
-        {weekDays.map((day, index) => (
-          <div key={index} className="border-b border-gray-200 p-2 text-center font-semibold">
-            {daysOfWeek[day.getDay()]} {day.getDate()}
-          </div>
-        ))}
-        {Array.from({ length: 24 }, (_, hour) => (
-          <>
-            <div key={`hour-${hour}`} className="border-b border-gray-200 p-2 text-sm text-gray-500">
-              {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-            </div>
-            {weekDays.map((day, dayIndex) => (
-              <div key={`${hour}-${dayIndex}`} className="border-b border-gray-200 p-2 relative">
-                {sampleEvents
-                  .filter(
-                    (event) =>
-                      event.date.getDate() === day.getDate() &&
-                      event.date.getMonth() === day.getMonth() &&
-                      event.date.getFullYear() === day.getFullYear() &&
-                      parseInt(event.time.split(":")[0]) === (hour % 12 || 12)
-                  )
-                  .map((event) => (
-                    <div
-                      key={event.id}
-                      className="absolute left-0 right-0 bg-blue-100 p-1 rounded text-xs"
-                      style={{ top: "0" }}
-                    >
-                      {event.title}
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        {Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(startOfWeek)
+          date.setDate(startOfWeek.getDate() + i)
+          const dayEmployees = employees.filter(e => {
+            // This is a simplification. In a real app, you'd check if the employee's status for this specific date matches
+            return true
+          })
+          
+          return (
+            <Card key={i}>
+              <CardContent>
+                <h3 className="font-bold mb-2">{daysOfWeek[i]}</h3>
+                <p className="text-sm mb-2">{date.toLocaleDateString()}</p>
+                {dayEmployees.map(employee => (
+                  <div key={employee.id} className="mb-2">
+                    <p>{employee.name}</p>
+                    <Badge>{employee.status}</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <header className="bg-white shadow-sm py-4 px-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Calendar Dashboard</h1>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Event
-          </Button>
+    <div className="bg-gray-100 min-h-screen">
+      <header className="bg-white shadow-sm py-4 px-4 sm:px-6 sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">My Schedule</h1>
+          <p className="text-sm text-gray-600">
+            {currentDateTime.toLocaleString()}
+          </p>
         </div>
       </header>
-      <main className="flex-grow p-6">
-        <Card className="w-full h-full">
-          <Tabs value={currentView} onValueChange={setCurrentView} className="w-full h-full flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <TabsList>
+      <main className="p-4 sm:p-6">
+        <Card className="w-full">
+          <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-center p-4 border-b space-y-2 sm:space-y-0">
+              <TabsList className="mb-2 sm:mb-0">
                 <TabsTrigger value="day">Day</TabsTrigger>
                 <TabsTrigger value="week">Week</TabsTrigger>
                 <TabsTrigger value="month">Month</TabsTrigger>
               </TabsList>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <Button variant="outline" size="icon" onClick={prevMonth}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-xl font-semibold">
+                <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {months[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </h2>
                 <Button variant="outline" size="icon" onClick={nextMonth}>
@@ -215,7 +296,7 @@ export default function Component() {
                   setCurrentDate(new Date(currentDate.getFullYear(), parseInt(value), 1))
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[140px] sm:w-[180px]">
                   <SelectValue placeholder="Select a month" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,18 +308,19 @@ export default function Component() {
                 </SelectContent>
               </Select>
             </div>
-            <CardContent className="flex-grow overflow-auto">
-              <TabsContent value="day" className="h-full">
+            <CardContent className="p-2 sm:p-4">
+              <TabsContent value="day">
                 {renderDayView()}
               </TabsContent>
-              <TabsContent value="week" className="h-full">
+              <TabsContent value="week">
                 {renderWeekView()}
               </TabsContent>
-              <TabsContent value="month" className="h-full">
-                <div className="grid grid-cols-7 gap-1">
+              {/* Month view */}
+              <TabsContent value="month">
+                <div className="grid grid-cols-7 gap-0">
                   {daysOfWeek.map((day) => (
-                    <div key={day} className="font-semibold text-center p-2">
-                      {day}
+                    <div key={day} className="font-semibold text-center p-1 sm:p-2 text-sm sm:text-base">
+                      {day.slice(0, 3)}
                     </div>
                   ))}
                   {renderMonthView()}
@@ -249,8 +331,8 @@ export default function Component() {
         </Card>
       </main>
       {selectedDate && (
-        <footer className="bg-white shadow-sm py-4 px-6 mt-4">
-          <p className="text-lg font-semibold">
+        <footer className="bg-white shadow-sm py-2 sm:py-4 px-4 sm: px-6 mt-4">
+          <p className="text-base sm:text-lg font-semibold">
             Selected Date: {selectedDate.toDateString()}
           </p>
         </footer>
