@@ -18,7 +18,8 @@ app = Flask(__name__)
 # Configure your database URL (e.g., MySQL)
 # app.config["SQLALCHEMY_DATABASE_URI"] = environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:3306/a1_database"
 # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL") or "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
+# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL") or "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database
@@ -39,14 +40,14 @@ def get_all():
 
 @app.route("/employee/<int:staff_id>")
 def get_employee_by_staff_id(staff_id):
-    employeelist = db.session.scalars(db.select(Employee).filter_by(staff_id=staff_id)).first()
+    employee = db.session.scalars(db.select(Employee).filter_by(staff_id=staff_id)).first()
 
-    if len(employeelist):
+    if employee:
         return jsonify(
             {
                 "code": 200,
                 "data": {
-                    "employee": [employee.json() for employee in employeelist]
+                    "employee": employee.json()
                 },
             }
         )
@@ -56,7 +57,7 @@ def get_employee_by_staff_id(staff_id):
 def get_reporting_manager(staff_id):
     employeelist = db.session.query(Employee.reporting_manager).filter_by(staff_id=staff_id).first()
 
-    if len(employeelist):
+    if employeelist:
         return jsonify(
             {
                 "code": 200,
@@ -72,7 +73,7 @@ def get_reporting_manager(staff_id):
 def get_employee_role(staff_id):
     employeelist = db.session.query(Employee.role).filter_by(staff_id=staff_id).first()
 
-    if len(employeelist):
+    if employeelist:
         return jsonify(
             {
                 "code": 200,
@@ -88,7 +89,7 @@ def get_employee_role(staff_id):
 def get_employees_by_role(role):
     employeelist = db.session.scalars(db.select(Employee).filter_by(role=role)).all()
 
-    if len(employeelist):
+    if employeelist:
         return jsonify(
             {
                 "code": 200,
@@ -103,7 +104,7 @@ def get_employees_by_role(role):
 def get_employees_by_dept(dept):
     employeelist = db.session.scalars(db.select(Employee).filter_by(dept=dept)).all()
 
-    if len(employeelist):
+    if employeelist:
         return jsonify(
             {
                 "code": 200,
