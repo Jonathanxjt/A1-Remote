@@ -17,8 +17,8 @@ app = Flask(__name__)
 
 # Configure your database URL (e.g., MySQL)
 # app.config["SQLALCHEMY_DATABASE_URI"] = environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:3306/a1_database"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL") or "mysql+mysqlconnector://root:root@localhost:3306/a1_database"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Initialize the database
@@ -105,6 +105,8 @@ def get_manager_schedule_email(email):
             }
         ), 200
     return jsonify({"code": 404, "message": "There are no schedule found."}), 404
+
+
 
 
 if __name__ == "__main__":
