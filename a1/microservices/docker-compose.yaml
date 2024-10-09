@@ -1,0 +1,71 @@
+version: '3.8'
+services:
+  user:
+    build:
+      context: .
+      dockerfile: dockerfile_user
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5001:5001" 
+    environment:
+      - .env
+    networks:
+      - my_network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: dockerfile_scheduler
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5005:5005"
+    environment:
+      - .env
+    networks:
+      - my_network
+
+  schedule:
+    build:
+      context: .
+      dockerfile: dockerfile_schedule
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5004:5004"
+    environment:
+      - .env
+    networks:
+      - my_network
+
+  employee:
+    build:
+      context: .
+      dockerfile: dockerfile_employee
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5002:5002"
+    environment:
+      - .env
+    networks:
+      - my_network
+
+  work-request:
+    build:
+      context: .
+      dockerfile: dockerfile_work_request
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5003:5003"
+    environment:
+      - .env
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
