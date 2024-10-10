@@ -59,7 +59,7 @@ def create_WkRq_Sch():
         if work_request_response.status_code != 201:
             return jsonify({
                 "code": work_request_response.status_code,
-                "message": f"Failed to create work request: {work_request_response.json().get('message', 'Unknown error')}"
+                "message": f"{work_request_response.json().get('message', 'Unknown error')}"
             }), work_request_response.status_code
 
         # Extract the work request data
