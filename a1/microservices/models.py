@@ -86,6 +86,8 @@ class User(db.Model):
             'email': self.email,
             'password': self.password
         }
+    
+    # to encapsulate is it to get_password in the class? so def get_password(self)
 
 
 class WorkRequest(db.Model):

@@ -6,11 +6,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+.env
+.__pychache__
 node_modules
 dist
 dist-ssr
 *.local
+a1.env
 
 # Editor directories and files
 .vscode/*
