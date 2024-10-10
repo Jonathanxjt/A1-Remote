@@ -46,19 +46,18 @@ export default function Component() {
   useEffect(() => {
     const fetchWorkRequests = async () => {
       try {
-        const response = await axios.get("http://localhost:5003/work_request/150318/employee")
+        const response = await axios.get("http://localhost:5004/schedule/150318/employee")
         if (response.data.code === 200) {
           const requests = response.data.data.work_request
             .filter((request: any) => request.status === "Approved" || request.status === "Pending")
             .map((request: any) => ({
               id: request.request_id,
-              date: parseDate(request.request_date),
-              title: request.reason,
+              date: parseDate(request.date),
               type: request.request_type as WorkStatus,
               status: request.status === "Pending" ? "Pending" : request.request_type as WorkStatus,
-              reportingManager: request.reporting_manager || "Unknown"
             }))
           setWorkRequests(requests)
+          console.log("Work requests fetched:", requests)
         } else {
           console.log("No work requests found.")
         }

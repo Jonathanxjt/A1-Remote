@@ -19,6 +19,9 @@ const Sidebar: React.FC = () => {
   const handleRequestsClick = () => {
     navigate("/requestpage"); //navigate to requests 
   };
+  const handleScheduleClick = () => {
+    navigate("/MySchedule"); //navigate to requests 
+  };
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
@@ -39,7 +42,7 @@ const Sidebar: React.FC = () => {
           {!collapsed && <span>Requests</span>}
         </div>
 
-        <div className="nav-item">
+        <div className="nav-item" onClick={handleScheduleClick}>
           <Calendar size={24} />
           {!collapsed && <span>Schedule</span>}
         </div>
