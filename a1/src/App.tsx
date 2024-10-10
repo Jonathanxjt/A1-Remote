@@ -8,6 +8,7 @@ import MySchedule from './pages/MySchedule/MySchedule';
 import Home from './pages/Home'; // Import the Home component
 import './App.css';
 
+
 const App: React.FC = () => {
   return (
     <div className="maincontainer"> {/* ensures that the sidebar does not cover the main-content */}

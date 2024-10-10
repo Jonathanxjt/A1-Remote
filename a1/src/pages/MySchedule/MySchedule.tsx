@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EmployeeStatusPieChart from "@/components/ui/EmployeeStatusPieChart";
 import {
   Select,
   SelectContent,
@@ -10,8 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -54,6 +55,8 @@ export default function Component() {
   const [workRequests, setWorkRequests] = useState<WorkRequest[]>([]);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [inOfficeCount, setInOfficeCount] = useState<number>(0);
+  const [WFHCount, setWFHCount] = useState<number>(0);
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
@@ -82,6 +85,7 @@ export default function Component() {
                   : (request.request_type as WorkStatus),
               reportingManager: request.reporting_manager || "Unknown",
             }));
+          // console.log("Work requests:", requests);
           setWorkRequests(requests);
         } else {
           console.log("No work requests found.");
@@ -93,21 +97,37 @@ export default function Component() {
 
     fetchWorkRequests();
 
-    const fetchEmployeesUnderManager = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5003/employee/${managerId}/manager`);
-        if (response.data.code === 200) {
-          const employeesData: Employee[] = response.data.data.employees; // Assuming employees are in this structure
-          setEmployees(employeesData); // Set all employees data
-        } else {
-          console.log("No employees found.");
-        }
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      }
+    // // this will fetch all the employees under the manager
+    // const fetchEmployeesUnderManager = async () => {
+    //   try {
+    //     // not provided yet
+    //     const response = await axios.get(`http://localhost:5003/employee/${managerId}/manager`);
+    //     if (response.data.code === 200) {
+    //       const employeesData: Employee[] = response.data.data.employees; // Assuming employees are in this structure
+    //       setEmployees(employeesData); // Set all employees data
+    //     } else {
+    //       console.log("No employees found.");
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching employees:", error);
+    //   }
+    // };
+
+    // this will return the count of employees in office
+    const countInOfficeEmployees = () => {
+      const count = employees.filter(
+        (employee) => employee.status === "In Office"
+      ).length;
+      setInOfficeCount(count);
     };
 
-    console.log(fetchWorkRequests);
+    // this will return the count of employees working from home
+    const countWFHEmployees = () => {
+      const count = employees.filter(
+        (employee) => employee.status === "WFH"
+      ).length;
+      setWFHCount(count);
+    };
 
     // Mock employee data - replace with actual API call
     setEmployees([
@@ -281,53 +301,58 @@ export default function Component() {
 
   const renderDayView = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent>
-            <h3 className="font-bold mb-2">In Office</h3>
-            {employees
-              .filter((e) => e.status === "In Office")
-              .map((employee) => (
-                <div key={employee.id} className="mb-2">
-                  <p>{employee.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Manager: {employee.reportingManager}
-                  </p>
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h3 className="font-bold mb-2">Working From Home</h3>
-            {employees
-              .filter((e) => e.status === "WFH")
-              .map((employee) => (
-                <div key={employee.id} className="mb-2">
-                  <p>{employee.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Manager: {employee.reportingManager}
-                  </p>
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h3 className="font-bold mb-2">On Leave</h3>
-            {employees
-              .filter((e) => e.status === "On Leave")
-              .map((employee) => (
-                <div key={employee.id} className="mb-2">
-                  <p>{employee.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Manager: {employee.reportingManager}
-                  </p>
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <div className="mt-6">
+          <EmployeeStatusPieChart />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent>
+              <h3 className="font-bold mb-2">In Office</h3>
+              {employees
+                .filter((e) => e.status === "In Office")
+                .map((employee) => (
+                  <div key={employee.id} className="mb-2">
+                    <p>{employee.name}</p>
+                    <p className="text-sm text-gray-500">
+                      Manager: {employee.reportingManager}
+                    </p>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <h3 className="font-bold mb-2">Working From Home</h3>
+              {employees
+                .filter((e) => e.status === "WFH")
+                .map((employee) => (
+                  <div key={employee.id} className="mb-2">
+                    <p>{employee.name}</p>
+                    <p className="text-sm text-gray-500">
+                      Manager: {employee.reportingManager}
+                    </p>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <h3 className="font-bold mb-2">On Leave</h3>
+              {employees
+                .filter((e) => e.status === "On Leave")
+                .map((employee) => (
+                  <div key={employee.id} className="mb-2">
+                    <p>{employee.name}</p>
+                    <p className="text-sm text-gray-500">
+                      Manager: {employee.reportingManager}
+                    </p>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   };
 
