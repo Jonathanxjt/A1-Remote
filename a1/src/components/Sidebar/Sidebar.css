@@ -1,5 +1,3 @@
-
-
 .sidebar {
     position: fixed;
     top: 0;
@@ -23,6 +21,22 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
+}
+
+/* Center the brand name "A1" on small screens */
+@media (max-width: 768px) {
+    .sidebar-header {
+        justify-content: center;
+    }
+
+    .toggle-btn {
+        display: none; /* Hide the chevron on small screens */
+    }
+
+    .brand {
+        text-align: center; /* Center the "A1" text */
+        width: 100%;
+    }
 }
 
 .brand {
