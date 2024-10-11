@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios"; // Import axios for making HTTP requests
+import axios from "axios";
 import {
   ChevronDown,
   ChevronUp,
@@ -16,6 +16,7 @@ import {
   endOfMonth,
   isSameDay,
   isWithinInterval,
+  parse,
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 export default function WorkFromHomeRequests() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
@@ -46,11 +54,17 @@ export default function WorkFromHomeRequests() {
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
-  const [requests, setRequests] = useState<any[]>([]); // Store work requests
-  const [loading, setLoading] = useState(true); // Show a loading indicator
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [employeeCache, setEmployeeCache] = useState<{ [key: number]: string }>(
     {}
   ); // Cache to store employee names by staff_id
+
+  // State for managing the reject/revoke modal and the selected request
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [actionType, setActionType] = useState<'reject' | 'revoke'>('reject');
+  const [actionRequest, setActionRequest] = useState<any | null>(null);
+  const [actionComment, setActionComment] = useState("");
 
   // Fetch all employees and store in a dictionary
   const fetchAllEmployees = async () => {
@@ -139,7 +153,7 @@ export default function WorkFromHomeRequests() {
           })
         );
       default:
-        return requests; // Show all requests
+        return requests;
     }
   };
 
@@ -167,6 +181,7 @@ export default function WorkFromHomeRequests() {
 
   useEffect(() => {
     setCurrentPage(1); // Reset page to 1 when filter or month changes
+    setSelectedRequests([]); // Clear selected requests when filter or date range changes
   }, [viewFilter, selectedMonth]);
 
   const toggleSortOrder = () => {
@@ -187,6 +202,40 @@ export default function WorkFromHomeRequests() {
     setSelectedRequests((prev) =>
       prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
     );
+  };
+
+   // Open modal for both reject and revoke actions
+   const openActionModal = (request: any, type: 'reject' | 'revoke') => {
+    console.log(`${type} request:`, request); // Log the request object
+    setActionType(type); // Set the action type (reject/revoke)
+    setActionRequest(request); // Store the request to display details
+    setIsActionModalOpen(true); // Open the modal
+  };
+
+  const closeActionModal = () => {
+    setActionComment(""); // Reset the comment field
+    setIsActionModalOpen(false); // Close the modal
+  };
+
+  const handleActionWithComment = async () => {
+    try {
+      console.log(
+        `${actionType === 'reject' ? 'Rejected' : 'Revoked'} request:`,
+        actionRequest,
+        "with comment:",
+        actionComment
+      );
+
+      // Example: call your backend API to handle reject or revoke
+      await axios.post(`/api/${actionType}-request`, {
+        requestId: actionRequest.request_id,
+        comment: actionComment,
+      });
+
+      closeActionModal(); // Close modal after action
+    } catch (error) {
+      console.error(`Error ${actionType}ing request:`, error);
+    }
   };
 
   if (loading) {
@@ -230,91 +279,143 @@ export default function WorkFromHomeRequests() {
           </Select>
         )}
       </div>
+      {/** Display requests in a table */}
       {paginatedRequests.length === 0 ? (
         <div>No requests found.</div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">
-                <Checkbox
-                  checked={
-                    selectedRequests.length === paginatedRequests.length &&
-                    paginatedRequests.length > 0
-                  }
-                  onCheckedChange={toggleSelectAll}
-                  disabled={paginatedRequests.length === 0} // Disable if no requests
-                  className="translate-y-[2px]"
-                />
-              </TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead className="cursor-pointer" onClick={toggleSortOrder}>
-                Date
-                {sortOrder === "asc" ? (
-                  <ChevronUp className="ml-2 h-4 w-4 inline" />
-                ) : (
-                  <ChevronDown className="ml-2 h-4 w-4 inline" />
-                )}
-              </TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedRequests.map((request) => (
-              <TableRow key={request.request_id}>
-                <TableCell className="w-[50px]">
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">
                   <Checkbox
-                    checked={selectedRequests.includes(request.request_id)}
-                    onCheckedChange={() =>
-                      toggleSelectRequest(request.request_id)
+                    checked={
+                      selectedRequests.length === paginatedRequests.length &&
+                      paginatedRequests.length > 0
                     }
+                    onCheckedChange={toggleSelectAll}
+                    disabled={paginatedRequests.length === 0}
                     className="translate-y-[2px]"
                   />
-                </TableCell>
-                <TableCell>
-                  {employeeCache[request.staff_id] || "Loading..."}
-                </TableCell>
-                <TableCell>
-                  {format(new Date(request.request_date), "dd MMMM yyyy, EEEE")}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={cn({
-                      "bg-blue-100 text-blue-800":
-                        request.request_type === "AM",
-                      "bg-green-100 text-green-800":
-                        request.request_type === "PM",
-                      "bg-purple-100 text-purple-800":
-                        request.request_type === "Full Day",
-                    })}
-                  >
-                    {request.request_type}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className="bg-yellow-100 text-yellow-800"
-                  >
-                    {request.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button size="sm" variant="outline">
-                      Approve
-                    </Button>
-                    <Button size="sm">Reject</Button>
-                  </div>
-                </TableCell>
+                </TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead className="cursor-pointer" onClick={toggleSortOrder}>
+                  Date
+                  {sortOrder === "asc" ? (
+                    <ChevronUp className="ml-2 h-4 w-4 inline" />
+                  ) : (
+                    <ChevronDown className="ml-2 h-4 w-4 inline" />
+                  )}
+                </TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {paginatedRequests.map((request) => (
+                <TableRow key={request.request_id}>
+                  <TableCell className="w-[50px]">
+                    <Checkbox
+                      checked={selectedRequests.includes(request.request_id)}
+                      onCheckedChange={() =>
+                        toggleSelectRequest(request.request_id)
+                      }
+                      className="translate-y-[2px]"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {employeeCache[request.staff_id] || "Loading..."}
+                  </TableCell>
+                  <TableCell>
+                    {format(
+                      new Date(request.request_date),
+                      "dd MMMM yyyy, EEEE"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={cn({
+                        "bg-blue-100 text-blue-800":
+                          request.request_type === "AM",
+                        "bg-green-100 text-green-800":
+                          request.request_type === "PM",
+                        "bg-purple-100 text-purple-800":
+                          request.request_type === "Full Day",
+                      })}
+                    >
+                      {request.request_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className="bg-yellow-100 text-yellow-800"
+                    >
+                      {request.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button size="sm">Approve</Button>
+                      <Button
+                        size="sm"
+                        onClick={() => openActionModal(request, 'reject')}
+                      >
+                        Reject
+                      </Button>
+                      <Button size="sm" onClick={()=> openActionModal(request, 'revoke')}>Revoke</Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {selectedRequests.length > 0 && (
+            <div className="mt-4 flex space-x-2">
+              <Button>Approve All</Button>
+              <Button>Reject All</Button>
+              <Button>Revoke All</Button>
+            </div>
+          )}
+        </>
       )}
+            {/* Action modal */}
+            <Dialog open={isActionModalOpen} onOpenChange={setIsActionModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'reject' ? 'Reject Request' : 'Revoke Request'}
+            </DialogTitle>
+            {/* Display request details */}
+            {actionRequest && (
+              <div className="mt-4">
+                <p><strong>Employee:</strong> {employeeCache[actionRequest.staff_id]}</p>
+                <p><strong>Request Type:</strong> {actionRequest.request_type}</p>
+                <p><strong>Request Date:</strong> {format(new Date(actionRequest.request_date), "dd MMMM yyyy, EEEE")}</p>
+              </div>
+            )}
+          </DialogHeader>
+          <div className="mt-4">
+            <label htmlFor="comment">Comment</label>
+            <Textarea
+              id="comment"
+              placeholder={`Please provide a reason for ${actionType === 'reject' ? 'rejection' : 'revoking'}`}
+              value={actionComment}
+              onChange={(e) => setActionComment(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="mt-4">
+            <Button onClick={closeActionModal} variant="outline">Cancel</Button>
+            <Button onClick={handleActionWithComment}>
+              {actionType === 'reject' ? 'Reject' : 'Revoke'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="text-sm text-muted-foreground">
@@ -324,27 +425,28 @@ export default function WorkFromHomeRequests() {
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
             <Select
-    value={`${rowsPerPage}`}
-    onValueChange={(value) => {
-      setRowsPerPage(Number(value));
-      setCurrentPage(1); // Reset to first page when rows per page changes
-    }}
-    disabled={sortedRequests.length === 0} // Disable when there are no requests
-  >
-    <SelectTrigger className="h-8 w-[70px]">
-      <SelectValue placeholder={rowsPerPage} />
-    </SelectTrigger>
-    <SelectContent side="top">
-      {[10, 20, 30, 40, 50].map((pageSize) => (
-        <SelectItem key={pageSize} value={`${pageSize}`}>
-          {pageSize}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
+              value={`${rowsPerPage}`}
+              onValueChange={(value) => {
+                setRowsPerPage(Number(value));
+                setCurrentPage(1); // Reset to first page when rows per page changes
+              }}
+              disabled={sortedRequests.length === 0} // Disable when there are no requests
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={rowsPerPage} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {sortedRequests.length === 0 ? 0 : currentPage} of {totalPages === 0 ? 0 : totalPages}
+            Page {sortedRequests.length === 0 ? 0 : currentPage} of{" "}
+            {totalPages === 0 ? 0 : totalPages}
           </div>
           <div className="flex items-center space-x-2">
             <Button
