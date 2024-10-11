@@ -151,6 +151,36 @@ def create_schedule():
     except Exception as e:
         db.session.rollback()
         return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
+    
+@app.route("/schedule/<int:request_id>/update_status", methods=["PUT"])
+def update_schedule_status(request_id):
+    try:
+        data = request.json
+
+        new_status = data.get('status')
+
+        if not new_status:
+            return jsonify({"code": 400, "message": "Status is required."}), 400
+
+        if new_status not in ['Approved', 'Rejected']:
+            return jsonify({"code": 400, "message": "Invalid status. Status must be either 'Approved' or 'Rejected'."}), 400
+
+        schedule_query = db.session.query(Schedule).filter_by(request_id=request_id).first()
+        if not schedule_query:
+            return jsonify({"code": 404, "message": "Schedule not found."}), 404
+
+        schedule_query.status = new_status
+
+        db.session.commit()
+
+        return jsonify({
+            "code": 200,
+            "message": "Schedule updated successfully.",
+            "data": schedule_query.json()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

@@ -69,31 +69,25 @@ def get_manager_work_requests(approval_manager_id):
 @app.route("/work_request/submit_work_request", methods=["POST"])
 def create_work_request():
     try:
-        # Parse the incoming JSON data
         data = request.json
 
-        # Extract fields from the request
         staff_id = data.get("staff_id")
         request_type = data.get("request_type")
         request_date_str = data.get("request_date")  # date string in "YYYY-MM-DD" format
         reason = data.get("reason", "")  # required
         comments = data.get("comments", "")  # Optional
 
-        # Convert string dates to actual datetime objects
         request_date = datetime.strptime(request_date_str, "%Y-%m-%d") if request_date_str else None
 
-        # Run validations using the class methods
         WorkRequest.validate_required_fields(staff_id, request_type, request_date, reason)
         WorkRequest.validate_weekday(request_date)
         WorkRequest.validate_advance_request(request_date)
         WorkRequest.check_duplicate_request(staff_id, request_date)
 
-        # Get the reporting manager for the staff
         manager = db.session.scalars(db.select(Employee.reporting_manager).filter_by(staff_id=staff_id)).first()
         if not manager:
             return jsonify({"code": 404, "message": "Manager not found for the given staff member."}), 404
 
-        # Create new WorkRequest object
         new_work_request = WorkRequest(
             staff_id=staff_id,
             request_type=request_type,
@@ -103,7 +97,6 @@ def create_work_request():
             comments=comments
         )
 
-        # Add the new request to the database and commit
         db.session.add(new_work_request)
         db.session.commit()
 
@@ -114,11 +107,45 @@ def create_work_request():
         }), 201
 
     except ValueError as ve:
-        # Handle validation errors
         return jsonify({"code": 400, "message": str(ve)}), 400
     except Exception as e:
-        # Handle general exceptions
         db.session.rollback()
+        return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
+    
+@app.route("/work_request/<int:request_id>/update_status", methods=["PUT"])
+def update_work_request_status(request_id):
+    try:
+        data = request.json
+
+        new_status = data.get('status')
+        comments = data.get('comments')
+
+        if not new_status:
+            return jsonify({"code": 400, "message": "Status is required."}), 400
+
+        if new_status not in ['Approved', 'Rejected']:
+            return jsonify({"code": 400, "message": "Invalid status. Status must be either 'Approved' or 'Rejected'."}), 400
+
+        work_request = db.session.query(WorkRequest).filter_by(request_id=request_id).first()
+        if not work_request:
+            return jsonify({"code": 404, "message": "WorkRequest not found."}), 404
+
+        if new_status == 'Rejected' and not comments:
+            return jsonify({"code": 400, "message": "Comments are required when rejecting a request."}), 400
+
+        work_request.status = new_status
+        work_request.comments = comments if comments else work_request.comments
+        work_request.decision_date = datetime.now()
+
+        db.session.commit()
+
+        return jsonify({
+            "code": 200,
+            "message": "WorkRequest updated successfully.",
+            "data": work_request.json()
+        }), 200
+
+    except Exception as e:
         return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
 
 

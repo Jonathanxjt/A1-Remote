@@ -114,6 +114,74 @@ def create_WkRq_Sch():
             "message": f"An unexpected error occurred: {str(e)}"
         }), 500
 
+@app.route("/scheduler/<int:request_id>/update_work_request_and_schedule", methods=["PUT"])
+def update_work_request_and_schedule(request_id):
+    try:
+        data = request.json
+
+        new_status = data.get('status')
+        comments = data.get('comments')
+
+        if not new_status:
+            return jsonify({"code": 400, "message": "Status is required."}), 400
+
+        work_request_url = f"{WORK_REQUEST_SERVICE_URL}/{request_id}/update_status"
+        work_request_payload = {
+            "status": new_status,
+            "comments": comments
+        }
+
+        work_request_response = requests.put(work_request_url, json=work_request_payload)
+
+        if work_request_response.status_code != 200:
+            return jsonify({
+                "code": work_request_response.status_code,
+                "message": "Failed to update WorkRequest",
+                "details": work_request_response.json()
+            }), work_request_response.status_code
+
+        schedule_url = f"{SCHEDULE_SERVICE_URL}/{request_id}/update_status"
+        schedule_payload = {
+            "status": new_status
+        }
+
+        schedule_response = requests.put(schedule_url, json=schedule_payload)
+
+        if schedule_response.status_code != 200:
+            rollback_url = f"{WORK_REQUEST_SERVICE_URL}/{request_id}/update_status"
+            rollback_payload = {
+                "status": "Pending", 
+                "comments": ""
+            }
+
+            rollback_response = requests.put(rollback_url, json=rollback_payload)
+
+            if rollback_response.status_code != 200:
+                return jsonify({
+                    "code": 500,
+                    "message": "Schedule update failed and WorkRequest rollback also failed.",
+                    "details": rollback_response.json()
+                }), 500
+
+            return jsonify({
+                "code": schedule_response.status_code,
+                "message": "Schedule update failed, WorkRequest rolled back.",
+                "details": schedule_response.json()
+            }), schedule_response.status_code
+
+        return jsonify({
+            "code": 200,
+            "message": "WorkRequest and Schedule updated successfully.",
+            "work_request_response": work_request_response.json(),
+            "schedule_response": schedule_response.json()
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"code": 500, "message": f"An error occurred while making a request: {str(e)}"}), 500
+
+    except Exception as e:
+        return jsonify({"code": 500, "message": f"An internal error occurred: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5005, debug=True)
