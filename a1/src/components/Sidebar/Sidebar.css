@@ -1,15 +1,9 @@
-/* Sidebar.css */
-
-.container {
-    display: flex;
-}
-
 .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
-    width: 16rem; /* 64 */
+    width: 16rem; /* Sidebar width */
     background-color: white;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     transition: width 0.3s;
@@ -19,7 +13,7 @@
 }
 
 .sidebar.collapsed {
-    width: 5rem; /* 20 */
+    width: 5rem; /* Adjust the sidebar width when collapsed */
 }
 
 .sidebar-header {
@@ -29,8 +23,24 @@
     padding: 1rem;
 }
 
+/* Center the brand name "A1" on small screens */
+@media (max-width: 768px) {
+    .sidebar-header {
+        justify-content: center;
+    }
+
+    .toggle-btn {
+        display: none; /* Hide the chevron on small screens */
+    }
+
+    .brand {
+        text-align: center; /* Center the "A1" text */
+        width: 100%;
+    }
+}
+
 .brand {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: bold;
     transition: opacity 0.3s;
 }
@@ -51,9 +61,24 @@
 .nav-item {
     display: flex;
     align-items: center;
+    justify-content: start;
     gap: 1rem;
     padding: 0.75rem 0;
     cursor: pointer;
+    transition: background-color 0.2s ease, justify-content 0.3s;
+}
+
+.nav-item svg {
+    flex-shrink: 0; /* Prevent icons from resizing */
+}
+
+.nav-item span {
+    font-size: 1rem;
+}
+
+/* Center icons when sidebar is collapsed */
+.sidebar.collapsed .nav-item {
+    justify-content: center; /* Center the icon */
 }
 
 .nav-item:hover {
@@ -73,6 +98,12 @@
     background-color: transparent;
     border: none;
     cursor: pointer;
+    justify-content: start;
+}
+
+/* Center sign-out button icon when sidebar is collapsed */
+.sidebar.collapsed .sign-out-btn {
+    justify-content: center;
 }
 
 .sign-out-btn:hover {
@@ -80,6 +111,7 @@
     border-radius: 0.5rem;
 }
 
+/* Main content and footer alignment */
 .main-content {
     margin-left: 16rem; /* Same as the sidebar width */
     padding: 1rem;
@@ -87,6 +119,14 @@
     transition: margin-left 0.3s;
 }
 
-.sidebar.collapsed + .main-content {
+.footer {
+    margin-left: 16rem; /* Same as the sidebar width */
+    padding: 1rem;
+    background-color: #f1f1f1;
+    text-align: center;
+}
+
+.sidebar.collapsed + .main-content,
+.sidebar.collapsed + .footer {
     margin-left: 5rem; /* Adjusted margin for collapsed sidebar */
 }

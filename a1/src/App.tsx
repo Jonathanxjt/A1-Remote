@@ -5,7 +5,9 @@ import RequestPage from './pages/RequestPage/request';
 import Login from './pages/Login/Login';
 import NotFound from './pages/NotFound';
 import MySchedule from './pages/MySchedule/MySchedule';
-import Home from './pages/Home'; // Import the Home component
+import Home from './pages/Home';
+import Footer from './components/footer.tsx';
+import ViewRequests from './pages/ViewRequests/ViewRequests';
 import './App.css';
 
 const App: React.FC = () => {
@@ -18,12 +20,11 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} /> {/* Login route */}
           <Route path="/requestpage" element={<RequestPage />} /> {/*requestPage route */}
           <Route path="/MySchedule" element={<MySchedule />} /> {/*myschedule route */}
+          <Route path="/ViewRequests" element={<ViewRequests />} /> {/*viewrequests route */}
           <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
+        <Footer/>
       </div>
-      <footer className="footer">
-        <p>Footer Content</p> {/* TODO: come up with the footer content */}
-      </footer>
     </div>
   );
 };

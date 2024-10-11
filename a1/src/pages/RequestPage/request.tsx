@@ -72,7 +72,8 @@ export default function WorkFromHomeForm() {
     const requestData = {
       staff_id, // Fetch staff_id from sessionStorage
       request_type: data.timePeriod,
-      request_date: data.date?.toISOString().split("T")[0], // Format the date properly for backend
+      // Format the date as a local date before submitting
+      request_date: data.date ? format(data.date, "yyyy-MM-dd") : undefined, 
       reason: data.reasons,
     };
 
