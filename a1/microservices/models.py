@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
+from datetime import datetime
 # Initialize the database
 db = SQLAlchemy()
 
@@ -117,7 +117,38 @@ class WorkRequest(db.Model):
         self.comments = comments
         self.status = status
 
+    # Validation to ensure required fields
+    @staticmethod
+    def validate_required_fields(staff_id, request_type, request_date, reason):
+        if not staff_id or not request_type or not request_date or not reason:
+            raise ValueError("Missing required fields: staff_id, request_type, request_date, or reason.")
+
+    # Validation to ensure request date is not a weekend
+    @staticmethod
+    def validate_weekday(request_date):
+        if request_date.weekday() in (5, 6):  # 5 is Saturday, 6 is Sunday
+            raise ValueError("You cannot submit a work-from-home request for a Saturday or Sunday.")
+
+    # Validation to ensure request is made at least 24 hours in advance
+    @staticmethod
+    def validate_advance_request(request_date):
+        current_time = datetime.now()
+        if (request_date - current_time).total_seconds() < 86400:
+            raise ValueError("You must submit the request at least 24 hours in advance.")
+
+    # Validation to ensure no duplicate work requests
+    @staticmethod
+    def check_duplicate_request(staff_id, request_date):
+        existing_request = db.session.query(WorkRequest).filter(
+            WorkRequest.staff_id == staff_id,
+            WorkRequest.request_date == request_date,
+            WorkRequest.status.in_(["Pending", "Approved"])
+        ).first()
+        if existing_request:
+            raise ValueError("You have already submitted a WFH request for that day.")
+
     def json(self):
+
         return {
             'request_id': self.request_id,
             'staff_id': self.staff_id,
@@ -164,6 +195,53 @@ class Schedule(db.Model):
             'request_type': self.request_type,
             'status': self.status
         }
+    
+    # Static method to validate if the schedule date is on a weekend
+    @staticmethod
+    def validate_weekend(date):
+        if date.weekday() in (5, 6):
+            raise ValueError("You cannot create a schedule for a Saturday or Sunday.")
+
+    # Static method to validate if the schedule is at least 24 hours in the future
+    @staticmethod
+    def validate_advance_schedule(date):
+        current_time = datetime.now()
+        if (date - current_time).total_seconds() < 86400:
+            raise ValueError("The schedule must be created for a date at least 24 hours in advance.")
+
+    # Class method to check for existing schedule by request ID
+    @classmethod
+    def check_existing_schedule(cls, request_id):
+        existing_schedule = db.session.query(cls).filter_by(request_id=request_id).first()
+        if existing_schedule:
+            raise ValueError("A schedule for this work request already exists.")
+
+    # Class method to create a new schedule from a work request
+    @classmethod
+    def create_from_work_request(cls, work_request):
+        staff_id = work_request.staff_id
+        approved_by = work_request.approval_manager_id
+        date = work_request.request_date
+        request_type = work_request.request_type
+        status = work_request.status
+
+        # Validate date (e.g., not on a weekend or less than 24 hours in the future)
+        cls.validate_weekend(date)
+        cls.validate_advance_schedule(date)
+
+        # Create a new Schedule object
+        new_schedule = cls(
+            staff_id=staff_id,
+            date=date,
+            approved_by=approved_by,
+            request_id=work_request.request_id,
+            request_type=request_type,
+            status=status
+        )
+
+        db.session.add(new_schedule)
+        db.session.commit()
+        return new_schedule
 
 
 class Audit(db.Model):

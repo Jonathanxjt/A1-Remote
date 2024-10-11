@@ -13,6 +13,9 @@ dist
 dist-ssr
 *.local
 a1.env
+htmlcov
+.pytest_cache
+/tests/__pychache__
 
 # Editor directories and files
 .vscode/*

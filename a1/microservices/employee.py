@@ -113,37 +113,6 @@ def get_employees_by_dept(dept):
         )
     return jsonify({"code": 404, "message": "There are no employees with this role."}), 404
 
-@app.route("/employee_email/<string:email>")
-def get_employee_by_email(email):
-    employee = db.session.query(Employee).filter_by(email=email).first()
-    
-    if employee:
-        return jsonify(
-            {
-                "code": 200,
-                "data": {
-                    "employee": employee.json()
-                },
-            }
-        )
-    return jsonify({"code": 404, "message": "There is no employee with this email."}), 404
-
-
-@app.route("/employee_email/<string:email>/manager")
-def get_reporting_manager_by_email(email):
-    employee = db.session.query(Employee.reporting_manager).filter_by(email=email).first()
-
-    if employee:
-        return jsonify(
-            {
-                "code": 200,
-                "data": {
-                    "email": email,
-                    "reporting_manager": employee.reporting_manager
-                },
-            }
-        )
-    return jsonify({"code": 404, "message": "There are no employee with this email."}), 404
 
 @app.route("/employee/<int:reporting_manager>/team")
 def get_team_members(reporting_manager):
