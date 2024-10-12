@@ -62,7 +62,7 @@ export default function WorkFromHomeRequests() {
 
   // State for managing the reject/revoke modal and the selected request
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [actionType, setActionType] = useState<'reject' | 'revoke'>('reject');
+  const [actionType, setActionType] = useState<"reject" | "revoke">("reject");
   const [actionRequest, setActionRequest] = useState<any | null>(null);
   const [actionComment, setActionComment] = useState("");
 
@@ -204,8 +204,27 @@ export default function WorkFromHomeRequests() {
     );
   };
 
-   // Open modal for both reject and revoke actions
-   const openActionModal = (request: any, type: 'reject' | 'revoke') => {
+  // Function to handle approval of a request directly without a dialog box
+  const handleApproveRequest = async (requestId) => {
+    try {
+      // Directly call the backend API to approve the request
+      await axios.put(
+        `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+        {
+          status: "Approved", // Set the status to 'Approved'
+        }
+      );
+
+      // Refetch requests after successful approval to update the UI with the latest data
+      fetchRequests();
+    } catch (error) {
+      // Log any errors that occur during the approval process
+      console.error("Error approving request:", error);
+    }
+  };
+
+  // Open modal for both reject and revoke actions
+  const openActionModal = (request: any, type: "reject" | "revoke") => {
     console.log(`${type} request:`, request); // Log the request object
     setActionType(type); // Set the action type (reject/revoke)
     setActionRequest(request); // Store the request to display details
@@ -219,20 +238,28 @@ export default function WorkFromHomeRequests() {
 
   const handleActionWithComment = async () => {
     try {
+      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
+
       console.log(
-        `${actionType === 'reject' ? 'Rejected' : 'Revoked'} request:`,
+        `${statusUpdate} request:`,
         actionRequest,
         "with comment:",
         actionComment
       );
 
-      // Example: call your backend API to handle reject or revoke
-      await axios.post(`/api/${actionType}-request`, {
-        requestId: actionRequest.request_id,
-        comment: actionComment,
-      });
+      // Call the backend API to update the work request and schedule
+      await axios.put(
+        `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+        {
+          status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
+          comments: actionComment, // Pass the comment provided by the user
+        }
+      );
 
-      closeActionModal(); // Close modal after action
+      // After successful response, close the modal
+      closeActionModal();
+      // Refetch requests after successful approval to update the UI with the latest data
+      fetchRequests();
     } catch (error) {
       console.error(`Error ${actionType}ing request:`, error);
     }
@@ -358,14 +385,27 @@ export default function WorkFromHomeRequests() {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button size="sm">Approve</Button>
+                      {/* Approve button to directly approve the request */}
                       <Button
                         size="sm"
-                        onClick={() => openActionModal(request, 'reject')}
+                        onClick={() => handleApproveRequest(request.request_id)}
+                      >
+                        Approve
+                      </Button>
+                      {/* Reject button to open a modal for rejecting the request */}
+                      <Button
+                        size="sm"
+                        onClick={() => openActionModal(request, "reject")}
                       >
                         Reject
                       </Button>
-                      <Button size="sm" onClick={()=> openActionModal(request, 'revoke')}>Revoke</Button>
+                      {/* Revoke button to open a modal for revoking the request */}
+                      <Button
+                        size="sm"
+                        onClick={() => openActionModal(request, "revoke")}
+                      >
+                        Revoke
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -382,19 +422,30 @@ export default function WorkFromHomeRequests() {
           )}
         </>
       )}
-            {/* Action modal */}
-            <Dialog open={isActionModalOpen} onOpenChange={setIsActionModalOpen}>
+      {/* Action modal */}
+      <Dialog open={isActionModalOpen} onOpenChange={setIsActionModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {actionType === 'reject' ? 'Reject Request' : 'Revoke Request'}
+              {actionType === "reject" ? "Reject Request" : "Revoke Request"}
             </DialogTitle>
             {/* Display request details */}
             {actionRequest && (
               <div className="mt-4">
-                <p><strong>Employee:</strong> {employeeCache[actionRequest.staff_id]}</p>
-                <p><strong>Request Type:</strong> {actionRequest.request_type}</p>
-                <p><strong>Request Date:</strong> {format(new Date(actionRequest.request_date), "dd MMMM yyyy, EEEE")}</p>
+                <p>
+                  <strong>Employee:</strong>{" "}
+                  {employeeCache[actionRequest.staff_id]}
+                </p>
+                <p>
+                  <strong>Request Type:</strong> {actionRequest.request_type}
+                </p>
+                <p>
+                  <strong>Request Date:</strong>{" "}
+                  {format(
+                    new Date(actionRequest.request_date),
+                    "dd MMMM yyyy, EEEE"
+                  )}
+                </p>
               </div>
             )}
           </DialogHeader>
@@ -402,20 +453,23 @@ export default function WorkFromHomeRequests() {
             <label htmlFor="comment">Comment</label>
             <Textarea
               id="comment"
-              placeholder={`Please provide a reason for ${actionType === 'reject' ? 'rejection' : 'revoking'}`}
+              placeholder={`Please provide a reason for ${
+                actionType === "reject" ? "rejection" : "revoking"
+              }`}
               value={actionComment}
               onChange={(e) => setActionComment(e.target.value)}
             />
           </div>
           <DialogFooter className="mt-4">
-            <Button onClick={closeActionModal} variant="outline">Cancel</Button>
+            <Button onClick={closeActionModal} variant="outline">
+              Cancel
+            </Button>
             <Button onClick={handleActionWithComment}>
-              {actionType === 'reject' ? 'Reject' : 'Revoke'}
+              {actionType === "reject" ? "Reject" : "Revoke"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="text-sm text-muted-foreground">

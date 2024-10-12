@@ -83,6 +83,7 @@ ALTER TABLE Employee MODIFY Reporting_Manager INT NULL;
 SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
+# C:/wamp64/tmp/employeenew.csv
 LOAD DATA INFILE 'a1/src/assets/employeenew.csv'
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
@@ -95,19 +96,19 @@ SET FOREIGN_KEY_CHECKS = 1;
 UPDATE Employee SET Reporting_Manager = Staff_ID WHERE Staff_ID = 130002;
 
 INSERT INTO User (Staff_ID, Email, Password)
-VALUES (130002, 'jack.sim@allinone.com.sg', 'Password123');
+VALUES (130002, 'jack.sim@allinone.com.sg', '$2b$12$mYEOIaiPiVCgGAgN2wmrPO0iiTlOwhhnhMmCg6Qr9XBlXndNeMrWy');
 
 INSERT INTO User (Staff_ID, Email, Password)
-VALUES (140002, 'Susan.Goh@allinone.com.sg', 'Password123');
+VALUES (140002, 'Susan.Goh@allinone.com.sg', '$2b$12$mYEOIaiPiVCgGAgN2wmrPO0iiTlOwhhnhMmCg6Qr9XBlXndNeMrWy');
 
 INSERT INTO User (Staff_ID, Email, Password)
-VALUES (140894, 'Rahim.Khalid@allinone.com.sg', 'Password123');
+VALUES (140894, 'Rahim.Khalid@allinone.com.sg', '$2b$12$mYEOIaiPiVCgGAgN2wmrPO0iiTlOwhhnhMmCg6Qr9XBlXndNeMrWy');
 
 INSERT INTO User (Staff_ID, Email, Password)
-VALUES (150318, 'Emma.Tan@allinone.com.sg', 'Password123');
+VALUES (150318, 'Emma.Tan@allinone.com.sg', '$2b$12$mYEOIaiPiVCgGAgN2wmrPO0iiTlOwhhnhMmCg6Qr9XBlXndNeMrWy');
 
 INSERT INTO User (Staff_ID, Email, Password)
-VALUES (151408, 'Philip.Lee@allinone.com.sg', 'Password123');
+VALUES (151408, 'Philip.Lee@allinone.com.sg', '$2b$12$mYEOIaiPiVCgGAgN2wmrPO0iiTlOwhhnhMmCg6Qr9XBlXndNeMrWy');
 
 INSERT INTO Work_Request (Request_ID, Staff_ID, Request_Type, Request_Date, Reason, Status, Approval_Manager_ID, Decision_Date, Comments, Created_Date)
 VALUES 

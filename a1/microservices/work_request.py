@@ -123,8 +123,8 @@ def update_work_request_status(request_id):
         if not new_status:
             return jsonify({"code": 400, "message": "Status is required."}), 400
 
-        if new_status not in ['Approved', 'Rejected']:
-            return jsonify({"code": 400, "message": "Invalid status. Status must be either 'Approved' or 'Rejected'."}), 400
+        if new_status not in ['Approved', 'Rejected', 'Revoked']:
+            return jsonify({"code": 400, "message": "Invalid status. Status must be either 'Approved' or 'Rejected' or 'Revoked'."}), 400
 
         work_request = db.session.query(WorkRequest).filter_by(request_id=request_id).first()
         if not work_request:
