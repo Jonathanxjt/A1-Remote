@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Employee } from "src/Models/Employee"; // Importing from models
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -41,13 +42,6 @@ interface WorkRequest {
   reportingManager: string;
 }
 
-interface Employee {
-  id: number;
-  name: string;
-  status: "In Office" | "WFH" | "On Leave";
-  reportingManager: string;
-}
-
 export default function Component() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
@@ -55,6 +49,8 @@ export default function Component() {
   const [workRequests, setWorkRequests] = useState<WorkRequest[]>([]);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
+  const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
   const [inOfficeCount, setInOfficeCount] = useState<number>(0);
   const [WFHCount, setWFHCount] = useState<number>(0);
 
@@ -97,21 +93,85 @@ export default function Component() {
 
     fetchWorkRequests();
 
-    // // this will fetch all the employees under the manager
-    // const fetchEmployeesUnderManager = async () => {
-    //   try {
-    //     // not provided yet
-    //     const response = await axios.get(`http://localhost:5003/employee/${managerId}/manager`);
-    //     if (response.data.code === 200) {
-    //       const employeesData: Employee[] = response.data.data.employees; // Assuming employees are in this structure
-    //       setEmployees(employeesData); // Set all employees data
-    //     } else {
-    //       console.log("No employees found.");
-    //     }
-    //   } catch (error) {
-    //     console.error("Error fetching employees:", error);
-    //   }
-    // };
+    // This will fetch all the employees under the manager
+    const fetchEmployeesUnderManager = async () => {
+      try {
+        const reportingManagerId = 151408; // Example manager ID placeholder
+        const response = await axios.get(
+          `http://localhost:5004/schedule/team/${reportingManagerId}`
+        );
+
+        if (response.data.code === 200) {
+          const employeesAMList: Employee[] = [];
+          const employeesPMList: Employee[] = [];
+
+          const currentDate = new Date();
+          const currentDateString = currentDate.toUTCString().split(",")[0]; // Format it to match "Tue, 15 Oct 2024"
+
+          response.data.data.forEach((item: any) => {
+            const employee = item.employee;
+            const schedule = item.schedule;
+
+            const employeeData: Employee = {
+              id: employee.staff_id,
+              fullName: `${employee.staff_fname} ${employee.staff_lname}`,
+              status: "In Office", // Default status
+              email: employee.email,
+              position: employee.position,
+            };
+
+            if (!schedule || schedule === "No schedule found.") {
+              // No schedule means in-office for the full day
+              employeesAMList.push(employeeData);
+              employeesPMList.push(employeeData);
+            } else {
+              // nthis will be current date by defualt, can just replace thsi with the dateon the screen or something
+              const todaySchedule = schedule.filter((s: any) => {
+                const scheduleDate = new Date(s.date)
+                  .toUTCString()
+                  .split(",")[0]; // Format for comparison
+                return scheduleDate === currentDateString;
+              });
+
+              const hasAM = todaySchedule.some(
+                (s: any) => s.request_type === "AM"
+              );
+              const hasPM = todaySchedule.some(
+                (s: any) => s.request_type === "PM"
+              );
+              const isFullDay = todaySchedule.some(
+                (s: any) => s.request_type === "Full Day"
+              );
+
+              // Parse the schedule to determine AM/PM/Full-day shifts
+              if (hasAM) {
+                employeeData.status = "AM";
+                employeesAMList.push(employeeData);
+                employeeData.status = "In Office";
+                employeesPMList.push(employeeData);
+              }
+              if (hasPM) {
+                employeeData.status = "PM";
+                employeesPMList.push(employeeData);
+                employeeData.status = "In Office";
+                employeesAMList.push(employeeData);
+              }
+              if (isFullDay) {
+                employeeData.status = "Full";
+                employeesAMList.push(employeeData);
+                employeesPMList.push(employeeData);
+              }
+            }
+          });
+          setEmployeesAM(employeesAMList);
+          setEmployeesPM(employeesPMList);
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
+    };
+
+    fetchEmployeesUnderManager();
 
     // this will return the count of employees in office
     const countInOfficeEmployees = () => {
@@ -128,28 +188,6 @@ export default function Component() {
       ).length;
       setWFHCount(count);
     };
-
-    // Mock employee data - replace with actual API call
-    setEmployees([
-      {
-        id: 1,
-        name: "John Doe",
-        status: "In Office",
-        reportingManager: "Jane Smith",
-      },
-      {
-        id: 2,
-        name: "Alice Johnson",
-        status: "WFH",
-        reportingManager: "Bob Brown",
-      },
-      {
-        id: 3,
-        name: "Charlie Davis",
-        status: "On Leave",
-        reportingManager: "Jane Smith",
-      },
-    ]);
 
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
@@ -300,13 +338,106 @@ export default function Component() {
   };
 
   const renderDayView = () => {
+    const totalAMCount = employeesAM.filter(
+      (employee) => employee.status === "AM" || employee.status === "Full"
+    ).length;
+    const totalPMCount = employeesAM.filter(
+      (employee) => employee.status === "PM" || employee.status === "Full"
+    ).length;
+    const totalAMinOfficeCount = employeesAM.length - totalAMCount;
+    const totalPMInOfficeCount = employeesPM.length - totalPMCount;
+
     return (
       <>
-        <div className="mt-6">
-          <EmployeeStatusPieChart />
+        <div className="mt-6 flex space-x-4">
+          <div className="w-1/2">
+            <EmployeeStatusPieChart employees={employeesAM} />
+            {/* AM Counters */}
+            <h4 className="font-bold">AM Status</h4>
+            <div className="mt-4 flex justify-start">
+              <div className="text-center">
+                <h5 className="text-lg">{totalAMCount}</h5>
+                <p className="text-sm text-gray-500">WFH</p>
+              </div>
+              <div className="text-center pl-4">
+                <h5 className="text-lg">{totalAMinOfficeCount}</h5>
+                <p className="text-sm text-gray-500">In Office</p>
+              </div>
+            </div>
+            {/* list of employee names */}
+            <div className="flex space-x-4 mt-2">
+              <div className="w-1/2">
+                <h6 className="font-semibold">Working From Home:</h6>
+                <ul className="list-disc pl-5">
+                  {employeesAM
+                    .filter(
+                      (employee) =>
+                        employee.status === "AM" || employee.status === "Full"
+                    )
+                    .map((employee) => (
+                      <li key={employee.id}>{employee.fullName}</li>
+                    ))}
+                </ul>
+              </div>
+              <div className="w-1/2">
+                <h6 className="font-semibold">In Office:</h6>
+                <ul className="list-disc pl-5">
+                  {employeesAM
+                    .filter((employee) => employee.status === "In Office")
+                    .map((employee) => (
+                      <li key={employee.id}>{employee.fullName}</li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-1/2">
+            <EmployeeStatusPieChart employees={employeesPM} />
+            {/* PM Counters */}
+            <div className="mt-4">
+              <h4 className="font-bold">PM Status</h4>
+              <div className="mt-4 flex justify-start">
+                <div className="text-center">
+                  <h5 className="text-lg">{totalPMCount}</h5>
+                  <p className="text-sm text-gray-500">WFH</p>
+                </div>
+                <div className="text-center pl-4">
+                  <h5 className="text-lg">{totalPMInOfficeCount}</h5>
+                  <p className="text-sm text-gray-500">In Office</p>
+                </div>
+              </div>
+              {/* list of employee names */}
+              <div className="flex space-x-4 mt-2">
+                <div className="w-1/2">
+                  <h6 className="font-semibold">Working From Home:</h6>
+                  <ul className="list-disc pl-5">
+                    {employeesAM
+                      .filter(
+                        (employee) =>
+                          employee.status === "PM" || employee.status === "Full"
+                      )
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                </div>
+                <div className="w-1/2">
+                  <h6 className="font-semibold">In Office:</h6>
+                  <ul className="list-disc pl-5">
+                    {employeesAM
+                      .filter((employee) => employee.status === "In Office")
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          {/* <Card>
             <CardContent>
               <h3 className="font-bold mb-2">In Office</h3>
               {employees
@@ -320,37 +451,7 @@ export default function Component() {
                   </div>
                 ))}
             </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <h3 className="font-bold mb-2">Working From Home</h3>
-              {employees
-                .filter((e) => e.status === "WFH")
-                .map((employee) => (
-                  <div key={employee.id} className="mb-2">
-                    <p>{employee.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Manager: {employee.reportingManager}
-                    </p>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <h3 className="font-bold mb-2">On Leave</h3>
-              {employees
-                .filter((e) => e.status === "On Leave")
-                .map((employee) => (
-                  <div key={employee.id} className="mb-2">
-                    <p>{employee.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Manager: {employee.reportingManager}
-                    </p>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </>
     );
