@@ -6,7 +6,8 @@ import {
   FileText,
   Calendar,
   Clipboard,
-} from "lucide-react";
+  Mail,
+} from "lucide-react"; // Import Mail icon for Mailbox
 import { Button } from "@/components/ui/button";
 import "./Sidebar.css";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +52,10 @@ const Sidebar: React.FC = () => {
     navigate("/MySchedule");
   };
 
+  const handleMailboxClick = () => {
+    navigate("/Mailbox"); // Navigate to the Mailbox page
+  };
+
   // Function to handle sign-out
   const handleSignOut = () => {
     sessionStorage.clear();
@@ -81,6 +86,13 @@ const Sidebar: React.FC = () => {
           label="Schedule"
           collapsed={collapsed}
           onClick={handleScheduleClick}
+        />
+        {/* New Mailbox navigation item */}
+        <NavItem
+          icon={<Mail size={24} />} // Use the Mail icon for the Mailbox
+          label="Mailbox"
+          collapsed={collapsed}
+          onClick={handleMailboxClick} // Handle navigation to Mailbox
         />
       </nav>
 
