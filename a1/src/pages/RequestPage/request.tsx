@@ -199,14 +199,14 @@ export default function WorkFromHomeForm() {
               rules={{ required: "Please select a time period" }} // Required validation
               render={({ field }) => (
                 <FormItem>
-                  <label className="text-gray-700">Time Period</label>
+                  <label className="text-gray-700">Type of Request</label>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a time period" />
+                        <SelectValue placeholder="Select Type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
