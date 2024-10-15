@@ -135,7 +135,8 @@ def update_work_request_status(request_id):
 
         work_request.status = new_status
         work_request.comments = comments if comments else work_request.comments
-        work_request.decision_date = datetime.now()
+        # Changed to db.func.current_timestamp() as datetime.now() was not retrieving the local current time
+        work_request.decision_date = db.func.current_timestamp()
 
         db.session.commit()
 
