@@ -7,6 +7,7 @@ import {
   Calendar,
   Clipboard,
   Mail,
+  Eye
 } from "lucide-react"; // Import Mail icon for Mailbox
 import { Button } from "@/components/ui/button";
 import "./Sidebar.css";
@@ -56,6 +57,10 @@ const Sidebar: React.FC = () => {
     navigate("/Mailbox"); // Navigate to the Mailbox page
   };
 
+  const handleViewRequestsClick = () => {
+    navigate("/ViewRequests"); // Navigate to the View Requests page
+  };
+
   // Function to handle sign-out
   const handleSignOut = () => {
     sessionStorage.clear();
@@ -77,9 +82,16 @@ const Sidebar: React.FC = () => {
         <NavItem icon={<FileText size={24} />} label="Dashboard" collapsed={collapsed} />
         <NavItem
           icon={<Clipboard size={24} />}
-          label="Requests"
+          label="Make Request"
           collapsed={collapsed}
           onClick={handleRequestsClick}
+        />
+        {/* New View Requests navigation item */}
+        <NavItem
+        icon={<Eye size={24} />} // Use Clipboard icon, or replace with a more suitable icon
+        label="View Requests"
+        collapsed={collapsed}
+        onClick={handleViewRequestsClick} // Handle navigation to View Requests
         />
         <NavItem
           icon={<Calendar size={24} />}
