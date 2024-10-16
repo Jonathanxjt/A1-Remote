@@ -16,6 +16,9 @@ a1.env
 htmlcov
 .pytest_cache
 /tests/__pychache__
+__pycache__/
+*.pyc
+
 
 # Editor directories and files
 .vscode/*
