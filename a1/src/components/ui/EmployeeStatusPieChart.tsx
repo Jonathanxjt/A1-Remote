@@ -34,7 +34,7 @@ const EmployeeStatusPieChart: React.FC<EmployeeStatusPieChartProps> = React.memo
   // Chart options
   const options = {
     chart: {
-      width: 500,
+      width: 400,
       height: 400,
     },
     series: {

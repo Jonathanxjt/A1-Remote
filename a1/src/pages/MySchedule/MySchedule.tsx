@@ -51,8 +51,7 @@ export default function Component() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
-  const [inOfficeCount, setInOfficeCount] = useState<number>(0);
-  const [WFHCount, setWFHCount] = useState<number>(0);
+  const [scheduleDate, setScheduleDate] = useState(new Date());
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
@@ -350,7 +349,7 @@ export default function Component() {
     return (
       <>
         <div className="mt-6 flex space-x-4">
-          <div className="w-1/2">
+          <div className="w-1/2 pr-2 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
             {/* AM Counters */}
             <h4 className="font-bold">AM Status</h4>
