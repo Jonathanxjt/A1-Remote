@@ -92,7 +92,9 @@ export default function Component() {
     // This will fetch all the employees under the manager
     const fetchEmployeesUnderManager = async () => {
       try {
-        const reportingManagerId = 151408; // Example manager ID placeholder
+        console.log(sessionStorage.getItem("user"));
+        const user = JSON.parse(sessionStorage.getItem("user") || '{}');
+        const reportingManagerId = user.reporting_manager;
         const response = await axios.get(
           `http://localhost:5004/schedule/team/${reportingManagerId}`
         );
@@ -130,13 +132,13 @@ export default function Component() {
               });
 
               const hasAM = todaySchedule.some(
-                (s: any) => s.request_type === "AM"
+                (s: any) => s.request_type === "AM"  && s.status === "Approved"
               );
               const hasPM = todaySchedule.some(
-                (s: any) => s.request_type === "PM"
+                (s: any) => s.request_type === "PM"  && s.status === "Approved"
               );
               const isFullDay = todaySchedule.some(
-                (s: any) => s.request_type === "Full Day"
+                (s: any) => s.request_type === "Full Day"  && s.status === "Approved"
               );
 
               // Parse the schedule to determine AM/PM/Full-day shifts
@@ -157,6 +159,10 @@ export default function Component() {
                 employeesAMList.push(employeeData);
                 employeesPMList.push(employeeData);
               }
+              if (!hasAM && !hasPM && !isFullDay) {
+                employeesAMList.push(employeeData);
+                employeesPMList.push(employeeData);
+              }
             }
           });
           setEmployeesAM(employeesAMList);
@@ -168,22 +174,6 @@ export default function Component() {
     };
 
     fetchEmployeesUnderManager();
-
-    // this will return the count of employees in office
-    const countInOfficeEmployees = () => {
-      const count = employees.filter(
-        (employee) => employee.status === "In Office"
-      ).length;
-      setInOfficeCount(count);
-    };
-
-    // this will return the count of employees working from home
-    const countWFHEmployees = () => {
-      const count = employees.filter(
-        (employee) => employee.status === "WFH"
-      ).length;
-      setWFHCount(count);
-    };
 
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
