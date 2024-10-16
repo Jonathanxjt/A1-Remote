@@ -18,13 +18,20 @@ request_types = ['Full Day', 'AM', 'PM']
 reason = '-'  # Same reason for all requests
 status = 'Pending'  # All requests will be pending
 
-def generate_mock(num_requests=100):
+def generate_mock(num_requests=50):
     today = datetime.today()
     request_date = today + timedelta(days=2)  # Start from 2 days from today
 
+    generated_requests = 0  # Track the number of requests generated
+
     with app.app_context():
-        for i in range(num_requests):
-            request_type = request_types[i % len(request_types)]  # Cycle through request types
+        while generated_requests < num_requests:
+            # Skip Saturdays and Sundays
+            if request_date.weekday() in (5, 6):  # 5 is Saturday, 6 is Sunday
+                request_date += timedelta(days=1)
+                continue
+
+            request_type = request_types[generated_requests % len(request_types)]  # Cycle through request types
 
             # Set request_date time to 00:00:00
             request_date_with_time = datetime.combine(request_date.date(), time.min)
@@ -57,8 +64,9 @@ def generate_mock(num_requests=100):
 
             # Move to the next day for the next request
             request_date += timedelta(days=1)
+            generated_requests += 1  # Increment the generated request counter
 
-            print(f"Generated Pending Work Request {i+1} and Schedule {i+1}")
+            print(f"Generated Pending Work Request {generated_requests} and Schedule {generated_requests}")
 
 if __name__ == "__main__":
-    generate_mock(100)
+    generate_mock(50)

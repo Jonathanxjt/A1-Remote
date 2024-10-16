@@ -1,35 +1,13 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import {
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
-import {
-  format,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  isSameDay,
-  isWithinInterval,
-  parse,
-} from "date-fns";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -38,13 +16,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import axios from "axios";
+import {
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isWithinInterval,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronUp,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Flip, toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export default function WorkFromHomeRequests() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
@@ -65,6 +67,13 @@ export default function WorkFromHomeRequests() {
   const [actionType, setActionType] = useState<"reject" | "revoke">("reject");
   const [actionRequest, setActionRequest] = useState<any | null>(null);
   const [actionComment, setActionComment] = useState("");
+
+  // Bulk reject/revoke state
+  const [isBulkActionModalOpen, setIsBulkActionModalOpen] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<"reject" | "revoke">(
+    "reject"
+  );
+  const [bulkActionComment, setBulkActionComment] = useState("");
 
   // Fetch all employees and store in a dictionary
   const fetchAllEmployees = async () => {
@@ -214,55 +223,252 @@ export default function WorkFromHomeRequests() {
           status: "Approved", // Set the status to 'Approved'
         }
       );
+      toast.success("Approved Request!", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
+
+      // Remove requestId from selectedRequests upon success
+      setSelectedRequests((prevSelected) =>
+        prevSelected.filter((id) => id !== requestId)
+      );
 
       // Refetch requests after successful approval to update the UI with the latest data
       fetchRequests();
     } catch (error) {
       // Log any errors that occur during the approval process
       console.error("Error approving request:", error);
+      toast.error("Failed to Approve Request", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
+    } finally {
+      // Remove requestId from selectedRequests upon failure
+      setSelectedRequests((prevSelected) =>
+        prevSelected.filter((id) => id !== requestId)
+      );
     }
   };
 
-  // Open modal for both reject and revoke actions
-  const openActionModal = (request: any, type: "reject" | "revoke") => {
-    console.log(`${type} request:`, request); // Log the request object
-    setActionType(type); // Set the action type (reject/revoke)
-    setActionRequest(request); // Store the request to display details
-    setIsActionModalOpen(true); // Open the modal
+  // Function to handle bulk approval of selected requests
+  const handleBulkApproveRequests = async () => {
+    const successRequests = [];
+    const failedRequests = [];
+
+    await Promise.all(
+      selectedRequests.map(async (requestId) => {
+        try {
+          await axios.put(
+            `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+            {
+              status: "Approved",
+            }
+          );
+          successRequests.push(requestId);
+        } catch (error) {
+          console.error("Error approving request:", requestId, error);
+          failedRequests.push(requestId);
+        }
+      })
+    );
+
+    if (successRequests.length > 0) {
+      toast.success(`${successRequests.length} Requests have been Approved!`, {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
+    }
+
+    if (failedRequests.length > 0) {
+      toast.error(`${failedRequests.length} Requests failed to Approve.`, {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
+    }
+
+    // Refetch requests after processing approvals to update the UI with the latest data
+    fetchRequests();
+    setSelectedRequests([]); // Clear selected requests after processing
   };
 
-  const closeActionModal = () => {
-    setActionComment(""); // Reset the comment field
-    setIsActionModalOpen(false); // Close the modal
+// Open modal for both reject and revoke actions
+const openActionModal = (request: any, type: "reject" | "revoke") => {
+  console.log(`${type} request:`, request); // Log the request object
+  setActionType(type); // Set the action type (reject/revoke)
+  setActionRequest(request); // Store the request to display details
+  setIsActionModalOpen(true); // Open the modal
+};
+
+const closeActionModal = () => {
+  setActionComment(""); // Reset the comment field
+  setIsActionModalOpen(false); // Close the modal
+};
+
+const handleActionWithComment = async () => {
+  try {
+    const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
+
+    console.log(
+      `${statusUpdate} request:`,
+      actionRequest,
+      "with comment:",
+      actionComment
+    );
+
+    // Call the backend API to update the work request and schedule
+    await axios.put(
+      `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+      {
+        status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
+        comments: actionComment, // Pass the comment provided by the user
+      }
+    );
+    toast.success(`${statusUpdate} Request!`, {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+      transition: Flip,
+    });
+
+    // Filter out the successfully handled request from selectedRequests
+    setSelectedRequests((prevSelectedRequests) =>
+      prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+    );
+
+    // After successful response, close the modal
+    closeActionModal();
+    // Refetch requests after successful approval to update the UI with the latest data
+    fetchRequests();
+  } catch (error) {
+    console.error(`Error ${actionType}ing request:`, error);
+    const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked";
+    toast.error(`Failed to ${statusUpdate.slice(0, -2)} Request!`, {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+      transition: Flip,
+    });
+
+    // Filter out the failed request from selectedRequests even on failure
+    setSelectedRequests((prevSelectedRequests) =>
+      prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+    );
+  }
+};
+
+  // Bulk action modal handler
+  const openBulkActionModal = (type: "reject" | "revoke") => {
+    setBulkActionType(type); // Set the action type for bulk (reject/revoke)
+    setIsBulkActionModalOpen(true); // Open the modal
   };
 
-  const handleActionWithComment = async () => {
-    try {
-      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
+  const closeBulkActionModal = () => {
+    setBulkActionComment(""); // Reset comment field
+    setIsBulkActionModalOpen(false); // Close the modal
+  };
 
-      console.log(
-        `${statusUpdate} request:`,
-        actionRequest,
-        "with comment:",
-        actionComment
-      );
+  const handleBulkActionWithComment = async () => {
+    const statusUpdate = bulkActionType === "reject" ? "Rejected" : "Revoked";
+    const successRequests = [];
+    const failedRequests = [];
 
-      // Call the backend API to update the work request and schedule
-      await axios.put(
-        `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+    await Promise.all(
+      selectedRequests.map(async (requestId) => {
+        try {
+          await axios.put(
+            `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+            {
+              status: statusUpdate,
+              comments: bulkActionComment,
+            }
+          );
+          successRequests.push(requestId);
+        } catch (error) {
+          console.error(
+            `Error ${bulkActionType}ing request:`,
+            requestId,
+            error
+          );
+          failedRequests.push(requestId);
+        }
+      })
+    );
+
+    if (successRequests.length > 0) {
+      toast.success(
+        `${successRequests.length} Requests have been ${statusUpdate}!`,
         {
-          status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
-          comments: actionComment, // Pass the comment provided by the user
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Flip,
         }
       );
-
-      // After successful response, close the modal
-      closeActionModal();
-      // Refetch requests after successful approval to update the UI with the latest data
-      fetchRequests();
-    } catch (error) {
-      console.error(`Error ${actionType}ing request:`, error);
     }
+
+    if (failedRequests.length > 0) {
+      toast.error(
+        `${failedRequests.length} Requests failed to ${statusUpdate}.`,
+        {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Flip,
+        }
+      );
+    }
+
+    fetchRequests(); // Refetch requests after bulk action
+    setSelectedRequests([]); // Clear selected requests
+    closeBulkActionModal(); // Close modal
   };
 
   if (loading) {
@@ -271,6 +477,8 @@ export default function WorkFromHomeRequests() {
 
   return (
     <div className="container mx-auto py-10">
+      {/* Add the ToastContainer */}
+      <ToastContainer />
       <h1 className="text-2xl font-bold mb-5">Work From Home Requests</h1>
       <div className="flex space-x-4 mb-4">
         <Select value={viewFilter} onValueChange={setViewFilter}>
@@ -415,9 +623,13 @@ export default function WorkFromHomeRequests() {
 
           {selectedRequests.length > 0 && (
             <div className="mt-4 flex space-x-2">
-              <Button>Approve All</Button>
-              <Button>Reject All</Button>
-              <Button>Revoke All</Button>
+              <Button onClick={handleBulkApproveRequests}>Approve All</Button>
+              <Button onClick={() => openBulkActionModal("reject")}>
+                Reject All
+              </Button>
+              <Button onClick={() => openBulkActionModal("revoke")}>
+                Revoke All
+              </Button>
             </div>
           )}
         </>
@@ -450,9 +662,12 @@ export default function WorkFromHomeRequests() {
             )}
           </DialogHeader>
           <div className="mt-4">
-            <label htmlFor="comment">Comment</label>
+            <label htmlFor="comment" className="block mb-2">
+              Comment <span className="text-red-500">*</span>
+            </label>
             <Textarea
               id="comment"
+              className="mt-2"
               placeholder={`Please provide a reason for ${
                 actionType === "reject" ? "rejection" : "revoking"
               }`}
@@ -464,8 +679,61 @@ export default function WorkFromHomeRequests() {
             <Button onClick={closeActionModal} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleActionWithComment}>
+            <Button
+              onClick={handleActionWithComment}
+              disabled={!actionComment.trim()} // Disable if comment is empty
+            >
               {actionType === "reject" ? "Reject" : "Revoke"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk action modal */}
+      <Dialog
+        open={isBulkActionModalOpen}
+        onOpenChange={setIsBulkActionModalOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {bulkActionType === "reject"
+                ? `Reject ${selectedRequests.length} Requests`
+                : `Revoke ${selectedRequests.length} Requests`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p>
+              You are about to{" "}
+              {bulkActionType === "reject" ? "reject" : "revoke"}{" "}
+              {selectedRequests.length}{" "}
+              {selectedRequests.length === 1 ? "request" : "requests"}. Please
+              provide a comment below.
+            </p>
+            <label htmlFor="bulkComment" className="block mb-2 mt-4">
+              Comment <span className="text-red-500">*</span>
+            </label>
+            <Textarea
+              id="bulkComment"
+              className="mt-2"
+              placeholder={`Please provide a reason for ${
+                bulkActionType === "reject" ? "rejecting" : "revoking"
+              } all selected requests`}
+              value={bulkActionComment}
+              onChange={(e) => setBulkActionComment(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="mt-4">
+            <Button onClick={closeBulkActionModal} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkActionWithComment}
+              disabled={!bulkActionComment.trim()} // Disable if comment is empty
+            >
+              {bulkActionType === "reject"
+                ? `Reject ${selectedRequests.length} Requests`
+                : `Revoke ${selectedRequests.length} Requests`}
             </Button>
           </DialogFooter>
         </DialogContent>

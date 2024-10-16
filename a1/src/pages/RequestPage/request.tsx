@@ -1,16 +1,5 @@
-import { useForm } from "react-hook-form";
-import axios from "axios";
-import {
-  format,
-  addDays,
-  isSaturday,
-  isSunday,
-  isAfter,
-  startOfDay,
-} from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -30,10 +19,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
-import { toast, ToastContainer, Flip } from "react-toastify";
+import { cn } from "@/lib/utils";
+import axios from "axios";
+import {
+  addDays,
+  format,
+  isAfter,
+  isSaturday,
+  isSunday,
+  startOfDay,
+} from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Flip, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function WorkFromHomeForm() {

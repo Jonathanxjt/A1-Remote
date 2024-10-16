@@ -130,8 +130,8 @@ def update_work_request_status(request_id):
         if not work_request:
             return jsonify({"code": 404, "message": "WorkRequest not found."}), 404
 
-        if new_status == 'Rejected' and not comments:
-            return jsonify({"code": 400, "message": "Comments are required when rejecting a request."}), 400
+        if new_status == ('Rejected' or 'Revoked') and not comments:
+            return jsonify({"code": 400, "message": "Comments are required when rejecting/revoking a request."}), 400
 
         work_request.status = new_status
         work_request.comments = comments if comments else work_request.comments
