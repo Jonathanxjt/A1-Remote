@@ -7,13 +7,18 @@ import {
   Calendar,
   Clipboard,
   Mail,
-  Eye
-} from "lucide-react"; // Import Mail icon for Mailbox
+  Eye,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import "./Sidebar.css";
 import { useNavigate } from "react-router-dom";
 
-const Sidebar: React.FC = () => {
+// SidebarProps interface
+interface SidebarProps {
+  unreadCount: number;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const navigate = useNavigate();
@@ -88,23 +93,24 @@ const Sidebar: React.FC = () => {
         />
         {/* New View Requests navigation item */}
         <NavItem
-        icon={<Eye size={24} />} // Use Clipboard icon, or replace with a more suitable icon
-        label="View Requests"
-        collapsed={collapsed}
-        onClick={handleViewRequestsClick} // Handle navigation to View Requests
-        />
-        <NavItem
-          icon={<Calendar size={24} />}
-          label="Schedule"
+          icon={<Eye size={24} />}
+          label="View Requests"
           collapsed={collapsed}
-          onClick={handleScheduleClick}
+          onClick={handleViewRequestsClick}
         />
-        {/* New Mailbox navigation item */}
         <NavItem
-          icon={<Mail size={24} />} // Use the Mail icon for the Mailbox
+          icon={
+            <div className="mail-icon-container">
+              <Mail size={24} />
+              {/* Display unread badge if there are unread emails */}
+              {unreadCount > 0 && (
+                <div className="unread-badge">{unreadCount}</div>
+              )}
+            </div>
+          }
           label="Mailbox"
           collapsed={collapsed}
-          onClick={handleMailboxClick} // Handle navigation to Mailbox
+          onClick={handleMailboxClick}
         />
       </nav>
 

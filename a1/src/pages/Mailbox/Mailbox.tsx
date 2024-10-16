@@ -1,11 +1,7 @@
-import { useState } from "react";
+import React from "react";
 import {
   ChevronDown,
   ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -19,58 +15,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function Mailbox() {
-  // Mock email data
-  const [emails, setEmails] = useState([
-    {
-      email_id: 1,
-      subject: "WFH Request for 10-11-24 Approved",
-      date: "2024-10-15",
-      status: "unread",
-    },
-    {
-      email_id: 2,
-      subject: "WFH Request for 11-11-24 Rejected",
-      date: "2024-10-14",
-      status: "read",
-    },
-    {
-      email_id: 3,
-      subject: "WFH on 13-11-24 Revoked",
-      date: "2024-10-13",
-      status: "unread",
-    },
-    {
-      email_id: 4,
-      subject: "WFH Request for 14-11-24 Approved",
-      date: "2024-10-12",
-      status: "read",
-    },
-  ]);
+// Define the Email type
+interface Email {
+  email_id: number;
+  sender: string;
+  subject: string;
+  date: string;
+  status: "read" | "unread";
+}
 
-  const [selectedEmails, setSelectedEmails] = useState<number[]>([]);
-  const [viewFilter, setViewFilter] = useState("all"); // Filters (all, unread, etc.)
-  const [searchTerm, setSearchTerm] = useState(""); // For searching emails
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+// Define the props for Mailbox component
+interface MailboxProps {
+  emails: Email[];
+  setEmails: React.Dispatch<React.SetStateAction<Email[]>>;
+}
 
-  // Filter emails based on view (all, unread, read)
-  const filterEmails = (emails: any[]) => {
-    return emails.filter((email) => {
-      const matchesStatus = viewFilter === "all" || email.status === viewFilter;
-      const matchesSearch =
-        searchTerm === "" ||
-        email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        email.sender.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesStatus && matchesSearch;
-    });
+const Mailbox: React.FC<MailboxProps> = ({ emails, setEmails }) => {
+  const [selectedEmails, setSelectedEmails] = React.useState<number[]>([]);
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
+
+  // Handle "Mark as Read"
+  const markAsRead = (id: number) => {
+    setEmails((prevEmails) =>
+      prevEmails.map((email) =>
+        email.email_id === id ? { ...email, status: "read" } : email
+      )
+    );
+  };
+
+  // Handle "Delete"
+  const deleteEmail = (id: number) => {
+    setEmails((prevEmails) => prevEmails.filter((email) => email.email_id !== id));
   };
 
   // Sort emails by date
-  const sortedEmails = filterEmails([...emails]).sort((a, b) => {
+  const sortedEmails = [...emails].sort((a, b) => {
     if (sortOrder === "asc") {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     } else {
@@ -93,20 +73,6 @@ export default function Mailbox() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-5">Mailbox</h1>
-      
-      <div className="flex space-x-4 mb-4">
-        <Select value={viewFilter} onValueChange={setViewFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="unread">Unread</SelectItem>
-            <SelectItem value="read">Read</SelectItem>
-          </SelectContent>
-        </Select>
-
-      </div>
 
       {/* Display emails in a table */}
       {sortedEmails.length === 0 ? (
@@ -161,10 +127,13 @@ export default function Mailbox() {
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <Button size="sm" onClick={() => console.log(`Marking email ${email.email_id} as read`)}>
-                      Mark as Read
-                    </Button>
-                    <Button size="sm" onClick={() => console.log(`Deleting email ${email.email_id}`)}>
+                    {/* Make the "Mark as Read" button work */}
+                    {email.status === "unread" && (
+                      <Button size="sm" onClick={() => markAsRead(email.email_id)}>
+                        Mark as Read
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={() => deleteEmail(email.email_id)}>
                       Delete
                     </Button>
                   </div>
@@ -174,9 +143,8 @@ export default function Mailbox() {
           </TableBody>
         </Table>
       )}
-
-      {/* Pagination (Optional for larger mock data) */}
-      {/* <Pagination /> */}
     </div>
   );
-}
+};
+
+export default Mailbox;
