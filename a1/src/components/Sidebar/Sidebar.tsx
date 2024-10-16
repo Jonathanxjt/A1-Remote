@@ -99,6 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
           onClick={handleViewRequestsClick}
         />
         <NavItem
+          icon={<Calendar size={24} />}
+          label="Schedule"
+          collapsed={collapsed}
+          onClick={handleScheduleClick}
+        />
+
+        <NavItem
           icon={
             <div className="mail-icon-container">
               <Mail size={24} />
