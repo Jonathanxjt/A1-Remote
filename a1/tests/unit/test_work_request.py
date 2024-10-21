@@ -2,7 +2,7 @@ import sys
 import os
 
 # Add the microservices folder to the system path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../microservices')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../microservices')))
 
 import pytest
 from datetime import datetime, timedelta
