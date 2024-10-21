@@ -63,7 +63,6 @@ jobs:
         pip install -r requirements.txt &&
         pytest a1/tests/integration --maxfail=1 --disable-warnings -v
         '
-    # Step 6: Show test coverage
     - name: Show test coverage
       run: |
         coverage run -m a1/tests/pytest
