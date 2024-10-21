@@ -1,8 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship
-from os import environ
 from flask_cors import CORS
 from models import *
 from dotenv import load_dotenv
@@ -12,7 +8,6 @@ import requests
 load_dotenv()
 
 import os
-import sys
 
 app = Flask(__name__)
 
