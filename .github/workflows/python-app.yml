@@ -56,7 +56,7 @@ jobs:
     - name: SSH into EC2 and run integration tests
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@ec2-54-255-148-42.ap-southeast-1.compute.amazonaws.com '
-        cd /A1-Remote &&
+        cd A1-Remote &&
         git pull origin main &&
         python3 -m venv venv &&
         source venv/bin/activate &&
