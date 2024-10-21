@@ -65,5 +65,5 @@ jobs:
         '
     - name: Show test coverage
       run: |
-        coverage run -m a1/tests/pytest
+        coverage run -m pytest
         coverage report
