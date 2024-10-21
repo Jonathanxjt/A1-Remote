@@ -61,9 +61,17 @@ jobs:
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
-        pytest a1/tests/integration --maxfail=1 --disable-warnings -v
+        coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
+        coverage xml
         '
+    - name: Copy coverage report from EC2 to GitHub Actions
+      run: |
+        scp -o StrictHostKeyChecking=no ec2-user@ec2-54-255-148-42.ap-southeast-1.compute.amazonaws.com:/path/to/A1-Remote/.coverage ./
+      
     - name: Show test coverage
       run: |
-        coverage run -m pytest
+        coverage run -m pytest a1/tests/unit --maxfail=1 --disable-warnings -v
+        coverage combine  # Combine coverage data from both unit and integration tests
         coverage report
+        coverage xml
+    
