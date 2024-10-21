@@ -40,7 +40,7 @@ jobs:
     # Step 5: Run unit tests with pytest (on GitHub-hosted runner)
     - name: Run unit tests with pytest
       run: |
-        pytest tests/unit --maxfail=1 --disable-warnings -v
+        pytest a1/tests/unit --maxfail=1 --disable-warnings -v
 
     # Step 6: Show test coverage
     - name: Show test coverage
@@ -67,5 +67,5 @@ jobs:
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
-        pytest tests/integration --maxfail=1 --disable-warnings -v
+        pytest a1/tests/integration --maxfail=1 --disable-warnings -v
         '
