@@ -3,26 +3,26 @@ from datetime import datetime
 # Initialize the database
 db = SQLAlchemy()
 
-class Role(db.Model):
-    __tablename__ = 'role'
+# class Role(db.Model):
+#     __tablename__ = 'role'
 
-    role = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    role_name = db.Column(db.String(50), nullable=False, unique=True)
-    role_description = db.Column(db.Text)
+#     role = db.Column(db.Integer, primary_key=True, autoincrement=True)
+#     role_name = db.Column(db.String(50), nullable=False, unique=True)
+#     role_description = db.Column(db.Text)
 
-    # Relationship with Employee
-    employees = db.relationship('Employee', back_populates='role_ref')
+#     # Relationship with Employee
+#     employees = db.relationship('Employee', back_populates='role_ref')
 
-    def __init__(self, role_name, role_description=None):
-        self.role_name = role_name
-        self.role_description = role_description
+#     def __init__(self, role_name, role_description=None):
+#         self.role_name = role_name
+#         self.role_description = role_description
 
-    def json(self):
-        return {
-            'role': self.role,
-            'role_name': self.role_name,
-            'role_description': self.role_description
-        }
+#     def json(self):
+#         return {
+#             'role': self.role,
+#             'role_name': self.role_name,
+#             'role_description': self.role_description
+#         }
     
 
 class Employee(db.Model):
@@ -36,11 +36,10 @@ class Employee(db.Model):
     country = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
     reporting_manager = db.Column(db.Integer, db.ForeignKey('employee.staff_id'), nullable=True)
-    role = db.Column(db.Integer, db.ForeignKey('role.role'), nullable=False)
+    role = db.Column(db.Integer, nullable=False)
 
     # Relationships
     manager = db.relationship('Employee', remote_side=[staff_id], backref='subordinates')
-    role_ref = db.relationship('Role', back_populates='employees')
 
     def __init__(self, staff_fname, staff_lname, dept, position, country, email, reporting_manager=None, role=None):
         self.staff_fname = staff_fname

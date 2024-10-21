@@ -5,13 +5,6 @@ DROP DATABASE IF EXISTS a1_database;
 CREATE DATABASE a1_database;
 USE a1_database;
 
-CREATE TABLE Role (
-    Role INT PRIMARY KEY AUTO_INCREMENT,
-    Role_Name VARCHAR(50) NOT NULL UNIQUE,
-    Role_Description TEXT
-);
-
-
 CREATE TABLE Employee (
     Staff_ID INT PRIMARY KEY AUTO_INCREMENT,
     Staff_FName VARCHAR(50) NOT NULL,
@@ -22,8 +15,7 @@ CREATE TABLE Employee (
     Email VARCHAR(50) NOT NULL UNIQUE,
     Reporting_Manager INT,
     Role INT NOT NULL,
-    FOREIGN KEY (Reporting_Manager) REFERENCES Employee(Staff_ID),
-    FOREIGN KEY (Role) REFERENCES Role(Role)
+    FOREIGN KEY (Reporting_Manager) REFERENCES Employee(Staff_ID)
 );
 
 CREATE TABLE User (
@@ -74,17 +66,11 @@ CREATE TABLE Audit (
     FOREIGN KEY (Manager_ID) REFERENCES Employee(Staff_ID)
 );
 
-INSERT INTO Role (Role, Role_Name, Role_Description)
-VALUES (1, 'HR', NULL), 
-       (2, 'Staff', NULL), 
-       (3, 'Manager', NULL);
-ALTER TABLE Employee MODIFY Reporting_Manager INT NULL;
-
 SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
 # C:/wamp64/tmp/employeenew.csv
-LOAD DATA INFILE 'a1/src/assets/employeenew.csv'
+LOAD DATA INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n' 
