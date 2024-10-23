@@ -1,158 +1,152 @@
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 16rem; /* Sidebar width */
-    background-color: white;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: width 0.3s;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000; /* Ensure the sidebar is on top */
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 16rem;
+	background-color: white;
+	box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+	transition: width 0.3s;
+	display: flex;
+	flex-direction: column;
+	z-index: 1000;
 }
 
 .sidebar.collapsed {
-    width: 5rem; /* Adjust the sidebar width when collapsed */
+	width: 5rem;
 }
 
 .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem;
 }
 
-/* Center the brand name "A1" on small screens */
 @media (max-width: 768px) {
-    .sidebar-header {
-        justify-content: center;
-    }
+	.sidebar-header {
+		justify-content: center;
+	}
 
-    .toggle-btn {
-        display: none; /* Hide the chevron on small screens */
-    }
+	.toggle-btn {
+		display: none;
+	}
 
-    .brand {
-        text-align: center; /* Center the "A1" text */
-        width: 100%;
-    }
+	.brand {
+		text-align: center;
+		width: 100%;
+	}
 }
 
 .brand {
-    font-size: 1.5rem;
-    font-weight: bold;
-    transition: opacity 0.3s;
+	font-size: 1.5rem;
+	font-weight: bold;
+	transition: opacity 0.3s;
 }
 
 .toggle-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
+	background: none;
+	border: none;
+	cursor: pointer;
 }
 
 .sidebar-nav {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	padding: 1rem;
 }
 
 .nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    cursor: pointer;
-    transition: background-color 0.2s ease, justify-content 0.3s;
+	display: flex;
+	align-items: center;
+	justify-content: start;
+	gap: 1rem;
+	padding: 0.75rem 0;
+	cursor: pointer;
+	transition: background-color 0.2s ease, justify-content 0.3s;
 }
 
 .nav-item svg {
-    flex-shrink: 0; /* Prevent icons from resizing */
+	flex-shrink: 0;
 }
 
 .nav-item span {
-    font-size: 1rem;
+	font-size: 1rem;
 }
 
-/* Center icons when sidebar is collapsed */
 .sidebar.collapsed .nav-item {
-    justify-content: center; /* Center the icon */
+	justify-content: center;
 }
 
 .nav-item:hover {
-    background-color: #f0f0f0;
-    border-radius: 0.5rem;
+	background-color: #f0f0f0;
+	border-radius: 0.5rem;
 }
 
 .sign-out {
-    padding: 1rem;
+	padding: 1rem;
 }
 
 .sign-out-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    justify-content: start;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	background-color: transparent;
+	border: none;
+	cursor: pointer;
+	justify-content: start;
 }
 
-/* Center sign-out button icon when sidebar is collapsed */
 .sidebar.collapsed .sign-out-btn {
-    justify-content: center;
+	justify-content: center;
 }
 
 .sign-out-btn:hover {
-    background-color: #f0f0f0;
-    border-radius: 0.5rem;
+	background-color: #f0f0f0;
+	border-radius: 0.5rem;
 }
 
-/* Main content and footer alignment */
 .main-content {
-    margin-left: 16rem; /* Same as the sidebar width */
-    padding: 1rem;
-    flex: 1;
-    transition: margin-left 0.3s;
+	margin-left: 16rem;
+	padding: 1rem;
+	flex: 1;
+	transition: margin-left 0.3s;
 }
 
 .footer {
-    margin-left: 16rem; /* Same as the sidebar width */
-    padding: 1rem;
-    background-color: #f1f1f1;
-    text-align: center;
+	margin-left: 16rem;
+	padding: 1rem;
+	background-color: #f1f1f1;
+	text-align: center;
 }
 
 .sidebar.collapsed + .main-content,
 .sidebar.collapsed + .footer {
-    margin-left: 5rem; /* Adjusted margin for collapsed sidebar */
+	margin-left: 5rem;
 }
 
 .unread-badge {
-    position: absolute;
-    top: -5px;
-    right: -10px;
-    background-color: orange;
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: bold;
+	position: absolute;
+	top: -5px;
+	right: -10px;
+	background-color: orange;
+	color: white;
+	border-radius: 50%;
+	width: 20px;
+	height: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: bold;
 }
 
-/* Ensure the badge is not visible when there are no unread emails */
 .unread-badge.hidden {
-    display: none;
+	display: none;
 }
 
-/* Position the mail icon relative to enable the absolute positioning of the badge */
 .mail-icon-container {
-    position: relative;
+	position: relative;
 }

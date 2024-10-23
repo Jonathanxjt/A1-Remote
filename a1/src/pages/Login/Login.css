@@ -4,12 +4,12 @@
   justify-content: center;
   min-height: 100vh;
   background-color: var(--background-color);
-  padding: 2rem; /* Adds padding for responsiveness */
+  padding: 2rem;
 }
 
 .login-card {
   width: 22rem;
-  padding: 0.5rem; 
+  padding: 0.5rem;
 }
 
 .login-card-header,
@@ -18,18 +18,18 @@
 }
 
 .login-card-title {
-  font-size: 2rem !important; /* Increased the title size */
-  margin-bottom: 1rem; /* Added margin for spacing */
+  font-size: 2rem !important;
+  margin-bottom: 1rem;
 }
 
 .login-card-description {
   color: var(--text-muted-color);
-  font-size: 1rem; /* Adjusted for responsiveness */
+  font-size: 1rem;
 }
 
 .login-input-group {
   display: grid;
-  gap: 1rem; /* Increased spacing between input fields */
+  gap: 1rem;
 }
 
 .input-error {
@@ -43,33 +43,33 @@
 
 .login-label {
   font-weight: 600 !important;
-  font-size: 1rem; /* Consistent label size */
+  font-size: 1rem;
 }
 
 /* Media query for small screens */
 @media (max-width: 768px) {
   .login-card {
-      width: 90%; /* Make the card width flexible for smaller screens */
-      padding: 1.5rem; /* Adjust padding for smaller screens */
+    width: 90%;
+    padding: 1.5rem;
   }
 
   .login-card-title {
-      font-size: 2rem; /* Slightly reduce title size on small screens */
+    font-size: 2rem;
   }
 
   .login-input-group {
-      gap: 0.75rem; /* Adjust input group spacing on small screens */
+    gap: 0.75rem;
   }
 }
 
 /* Media query for extra small screens */
 @media (max-width: 480px) {
   .login-card {
-      width: 95%; /* Almost full width for extra small screens */
-      padding: 1rem;
+    width: 95%;
+    padding: 1rem;
   }
 
   .login-card-title {
-      font-size: 1.5rem; /* Further reduce title size on extra small screens */
+    font-size: 1.5rem;
   }
 }

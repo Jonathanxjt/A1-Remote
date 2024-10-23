@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState({ email: "", password: "" });
-  const navigate = useNavigate(); // Initialize the navigate function
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
@@ -41,14 +41,12 @@ export default function LoginPage() {
   }, [navigate]);
 
   const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
-    // Prevent the default form submission
     if (e) e.preventDefault();
 
     let valid = true;
     let emailError = "";
     let passwordError = "";
 
-    // Basic email and password validation
     if (!email) {
       emailError = "Email is required";
       valid = false;
@@ -94,7 +92,7 @@ export default function LoginPage() {
           });
 
           setTimeout(() => {
-            navigate("/"); // Replace "/" with the path to your homepage
+            navigate("/");
           }, 1000);
         } else {
           toast.error("Login failed: Incorrect email or password!", {
@@ -126,17 +124,15 @@ export default function LoginPage() {
     }
   };
 
-  // Function to handle key press events (Enter key to submit)
   const handleKeyPress = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent the default form submit behavior
+      e.preventDefault();
       handleSubmit();
     }
   };
 
   return (
     <div className="login-page-container">
-      {/* Add the ToastContainer */}
       <ToastContainer />
 
       <Card className="login-card">

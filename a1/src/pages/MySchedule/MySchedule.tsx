@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Employee } from "src/Models/Employee"; // Importing from models
+import { Employee } from "src/Models/Employee"; 
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -77,7 +77,6 @@ export default function Component() {
                   : (request.request_type as WorkStatus),
               reportingManager: request.reporting_manager || "Unknown",
             }));
-          // console.log("Work requests:", requests);
           setWorkRequests(requests);
         } else {
           console.log("No work requests found.");
@@ -89,7 +88,6 @@ export default function Component() {
 
     fetchWorkRequests();
 
-    // This will fetch all the employees under the manager
     const fetchEmployeesUnderManager = async () => {
       try {
         console.log(sessionStorage.getItem("user"));
@@ -113,21 +111,19 @@ export default function Component() {
             const employeeData: Employee = {
               id: employee.staff_id,
               fullName: `${employee.staff_fname} ${employee.staff_lname}`,
-              status: "In Office", // Default status
+              status: "In Office", 
               email: employee.email,
               position: employee.position,
             };
 
             if (!schedule || schedule === "No schedule found.") {
-              // No schedule means in-office for the full day
               employeesAMList.push(employeeData);
               employeesPMList.push(employeeData);
             } else {
-              // nthis will be current date by defualt, can just replace thsi with the dateon the screen or something
               const todaySchedule = schedule.filter((s: any) => {
                 const scheduleDate = new Date(s.date)
                   .toUTCString()
-                  .split(",")[0]; // Format for comparison
+                  .split(",")[0]; 
                 return scheduleDate === currentDateString;
               });
 
@@ -338,7 +334,6 @@ export default function Component() {
         <div className="mt-6 flex space-x-4">
           <div className="w-1/2 pr-2 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
-            {/* AM Counters */}
             <h4 className="font-bold">AM Status</h4>
             <div className="mt-4 flex justify-start">
               <div className="text-center">
@@ -350,7 +345,6 @@ export default function Component() {
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
-            {/* list of employee names */}
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
@@ -380,7 +374,6 @@ export default function Component() {
 
           <div className="w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
-            {/* PM Counters */}
             <div className="mt-4">
               <h4 className="font-bold">PM Status</h4>
               <div className="mt-4 flex justify-start">
@@ -393,7 +386,6 @@ export default function Component() {
                   <p className="text-sm text-gray-500">In Office</p>
                 </div>
               </div>
-              {/* list of employee names */}
               <div className="flex space-x-4 mt-2">
                 <div className="w-1/2">
                   <h6 className="font-semibold">Working From Home:</h6>
@@ -423,21 +415,6 @@ export default function Component() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* <Card>
-            <CardContent>
-              <h3 className="font-bold mb-2">In Office</h3>
-              {employees
-                .filter((e) => e.status === "In Office")
-                .map((employee) => (
-                  <div key={employee.id} className="mb-2">
-                    <p>{employee.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Manager: {employee.reportingManager}
-                    </p>
-                  </div>
-                ))}
-            </CardContent>
-          </Card> */}
         </div>
       </>
     );
@@ -453,7 +430,6 @@ export default function Component() {
           const date = new Date(startOfWeek);
           date.setDate(startOfWeek.getDate() + i);
           const dayEmployees = employees.filter((e) => {
-            // This is a simplification. In a real app, you'd check if the employee's status for this specific date matches
             return true;
           });
 

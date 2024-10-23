@@ -450,7 +450,7 @@ export default function MyRequests() {
                     style={{
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
-                      maxWidth: "200px", 
+                      maxWidth: "200px",
                     }}
                   >
                     {request.comments || "No comments"}

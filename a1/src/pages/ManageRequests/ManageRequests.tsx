@@ -53,20 +53,19 @@ export default function WorkFromHomeRequests() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch the user data from sessionStorage
     const userData = sessionStorage.getItem("user");
 
     if (userData) {
-      const user = JSON.parse(userData); // Parse the user data from JSON format
+      const user = JSON.parse(userData);
       console.log(user);
       if (user.role !== 1 && user.role !== 3) {
         navigate("/");
       }
     } else {
-      // If no user data found in sessionStorage, redirect to the login page
       navigate("/login");
     }
   }, [navigate]);
+
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,27 +78,24 @@ export default function WorkFromHomeRequests() {
   const [loading, setLoading] = useState(true);
   const [employeeCache, setEmployeeCache] = useState<{ [key: number]: string }>(
     {}
-  ); // Cache to store employee names by staff_id
+  );
 
-  // State for managing the reject/revoke modal and the selected request
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [actionType, setActionType] = useState<"reject" | "revoke">("reject");
   const [actionRequest, setActionRequest] = useState<any | null>(null);
   const [actionComment, setActionComment] = useState("");
 
-  // Bulk reject/revoke state
   const [isBulkActionModalOpen, setIsBulkActionModalOpen] = useState(false);
   const [bulkActionType, setBulkActionType] = useState<"reject" | "revoke">(
     "reject"
   );
   const [bulkActionComment, setBulkActionComment] = useState("");
 
-  const [statusFilter, setStatusFilter] = useState("Pending"); // Default to 'Pending'
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [dateRange, setDateRange] = useState({ from: null, to: null });
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    // Here you can add additional logic to refetch or filter requests based on the selected status
     console.log(`Selected status: ${value}`);
   };
 
@@ -125,10 +121,9 @@ export default function WorkFromHomeRequests() {
     }
   };
 
-  // Fetch work requests from Flask backend
   const fetchRequests = async () => {
     try {
-      const staffId = sessionStorage.getItem("staff_id"); // Get staff_id from session storage
+      const staffId = sessionStorage.getItem("staff_id");
       if (staffId) {
         const response = await axios.get(
           `http://localhost:5003/work_request/${staffId}/manager`
@@ -138,7 +133,7 @@ export default function WorkFromHomeRequests() {
             (request: any) =>
               request.status === "Pending" || request.status === "Approved"
           );
-          setRequests(pendingRequests); // Store the requests
+          setRequests(pendingRequests);
         } else {
           console.error(
             "Error fetching work requests: ",
@@ -151,20 +146,18 @@ export default function WorkFromHomeRequests() {
     } catch (error) {
       console.error("Error fetching work requests: ", error);
     } finally {
-      setLoading(false); // Loading completed
+      setLoading(false);
     }
   };
 
-  // Fetch employees and work requests on component mount
   useEffect(() => {
-    fetchAllEmployees(); // Fetch all employees once
-    fetchRequests(); // Fetch work requests
+    fetchAllEmployees();
+    fetchRequests();
   }, []);
 
   const filterRequests = (requests: any[]) => {
     const today = new Date();
 
-    // Filter by status
     const filteredByStatus = requests.filter(
       (request) => request.status === statusFilter
     );
@@ -199,16 +192,15 @@ export default function WorkFromHomeRequests() {
               end: dateRange.to,
             });
           }
-          return true; // If no date range is selected, show all requests
+          return true;
         default:
-          return true; // Return all if no specific viewFilter is selected
+          return true;
       }
     });
 
     return filteredRequests;
   };
 
-  // Sort filtered requests by date
   const sortedRequests = filterRequests([...requests]).sort((a, b) => {
     if (sortOrder === "asc") {
       return (
@@ -221,18 +213,16 @@ export default function WorkFromHomeRequests() {
     }
   });
 
-  // Paginate sorted requests
   const paginatedRequests = sortedRequests.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
 
-  // Calculate total number of pages
   const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset page to 1 when filter or month changes
-    setSelectedRequests([]); // Clear selected requests when filter or date range changes
+    setCurrentPage(1);
+    setSelectedRequests([]);
   }, [viewFilter, selectedMonth, dateRange]);
 
   const toggleSortOrder = () => {
@@ -241,11 +231,11 @@ export default function WorkFromHomeRequests() {
 
   const toggleSelectAll = () => {
     if (selectedRequests.length === paginatedRequests.length) {
-      setSelectedRequests([]); // Deselect all
+      setSelectedRequests([]);
     } else {
       setSelectedRequests(
         paginatedRequests.map((request) => request.request_id)
-      ); // Select all
+      );
     }
   };
 
@@ -258,7 +248,6 @@ export default function WorkFromHomeRequests() {
   // Function to handle approval of a request directly without a dialog box
   const handleApproveRequest = async (requestId) => {
     try {
-      // Directly call the backend API to approve the request
       await axios.put(
         `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
         {
@@ -277,15 +266,12 @@ export default function WorkFromHomeRequests() {
         transition: Flip,
       });
 
-      // Remove requestId from selectedRequests upon success
       setSelectedRequests((prevSelected) =>
         prevSelected.filter((id) => id !== requestId)
       );
 
-      // Refetch requests after successful approval to update the UI with the latest data
       fetchRequests();
     } catch (error) {
-      // Log any errors that occur during the approval process
       console.error("Error approving request:", error);
       toast.error("Failed to Approve Request", {
         position: "top-right",
@@ -299,14 +285,12 @@ export default function WorkFromHomeRequests() {
         transition: Flip,
       });
     } finally {
-      // Remove requestId from selectedRequests upon failure
       setSelectedRequests((prevSelected) =>
         prevSelected.filter((id) => id !== requestId)
       );
     }
   };
 
-  // Function to handle bulk approval of selected requests
   const handleBulkApproveRequests = async () => {
     const successRequests = [];
     const failedRequests = [];
@@ -355,28 +339,26 @@ export default function WorkFromHomeRequests() {
         transition: Flip,
       });
     }
-
-    // Refetch requests after processing approvals to update the UI with the latest data
     fetchRequests();
-    setSelectedRequests([]); // Clear selected requests after processing
+    setSelectedRequests([]);
   };
 
   // Open modal for both reject and revoke actions
   const openActionModal = (request: any, type: "reject" | "revoke") => {
-    console.log(`${type} request:`, request); // Log the request object
-    setActionType(type); // Set the action type (reject/revoke)
-    setActionRequest(request); // Store the request to display details
-    setIsActionModalOpen(true); // Open the modal
+    console.log(`${type} request:`, request);
+    setActionType(type);
+    setActionRequest(request);
+    setIsActionModalOpen(true);
   };
 
   const closeActionModal = () => {
-    setActionComment(""); // Reset the comment field
-    setIsActionModalOpen(false); // Close the modal
+    setActionComment("");
+    setIsActionModalOpen(false);
   };
 
   const handleActionWithComment = async () => {
     try {
-      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
+      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked";
 
       console.log(
         `${statusUpdate} request:`,
@@ -385,12 +367,11 @@ export default function WorkFromHomeRequests() {
         actionComment
       );
 
-      // Call the backend API to update the work request and schedule
       await axios.put(
         `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
         {
-          status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
-          comments: actionComment, // Pass the comment provided by the user
+          status: statusUpdate,
+          comments: actionComment,
         }
       );
       toast.success(`${statusUpdate} Request!`, {
@@ -404,15 +385,12 @@ export default function WorkFromHomeRequests() {
         theme: "dark",
         transition: Flip,
       });
-
-      // Filter out the successfully handled request from selectedRequests
       setSelectedRequests((prevSelectedRequests) =>
         prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
       );
 
-      // After successful response, close the modal
       closeActionModal();
-      // Refetch requests after successful approval to update the UI with the latest data
+
       fetchRequests();
     } catch (error) {
       console.error(`Error ${actionType}ing request:`, error);
@@ -429,22 +407,20 @@ export default function WorkFromHomeRequests() {
         transition: Flip,
       });
 
-      // Filter out the failed request from selectedRequests even on failure
       setSelectedRequests((prevSelectedRequests) =>
         prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
       );
     }
   };
 
-  // Bulk action modal handler
   const openBulkActionModal = (type: "reject" | "revoke") => {
-    setBulkActionType(type); // Set the action type for bulk (reject/revoke)
-    setIsBulkActionModalOpen(true); // Open the modal
+    setBulkActionType(type);
+    setIsBulkActionModalOpen(true);
   };
 
   const closeBulkActionModal = () => {
-    setBulkActionComment(""); // Reset comment field
-    setIsBulkActionModalOpen(false); // Close the modal
+    setBulkActionComment("");
+    setIsBulkActionModalOpen(false);
   };
 
   const handleBulkActionWithComment = async () => {
@@ -508,18 +484,17 @@ export default function WorkFromHomeRequests() {
       );
     }
 
-    fetchRequests(); // Refetch requests after bulk action
-    setSelectedRequests([]); // Clear selected requests
-    closeBulkActionModal(); // Close modal
+    fetchRequests();
+    setSelectedRequests([]);
+    closeBulkActionModal();
   };
 
   if (loading) {
-    return <div>Loading...</div>; // Display loading message while fetching data
+    return <div>Loading...</div>;
   }
 
   return (
     <div className="container mx-auto py-10">
-      {/* Add the ToastContainer */}
       <ToastContainer />
       <h1 className="text-2xl font-bold mb-5">Work From Home Requests</h1>
       <div className="flex space-x-4 mb-4">
@@ -578,7 +553,6 @@ export default function WorkFromHomeRequests() {
             />
           </div>
         )}
-        {/* Status filter dropdown */}
 
         <div className="flex flex-col">
           <label htmlFor="status" className="text-sm font-medium mb-1">
@@ -595,7 +569,6 @@ export default function WorkFromHomeRequests() {
           </Select>
         </div>
       </div>
-      {/** Display requests in a table */}
       {paginatedRequests.length === 0 ? (
         <div>No requests found.</div>
       ) : (
@@ -681,7 +654,6 @@ export default function WorkFromHomeRequests() {
                     <div className="flex space-x-2">
                       {request.status === "Pending" && (
                         <>
-                          {/* Approve button for Pending requests */}
                           <Button
                             size="sm"
                             onClick={() =>
@@ -690,7 +662,6 @@ export default function WorkFromHomeRequests() {
                           >
                             Approve
                           </Button>
-                          {/* Reject button for Pending requests */}
                           <Button
                             size="sm"
                             onClick={() => openActionModal(request, "reject")}
@@ -701,7 +672,6 @@ export default function WorkFromHomeRequests() {
                       )}
                       {request.status === "Approved" && (
                         <>
-                          {/* Revoke button for Approved requests */}
                           <Button
                             size="sm"
                             onClick={() => openActionModal(request, "revoke")}
@@ -719,7 +689,6 @@ export default function WorkFromHomeRequests() {
 
           {selectedRequests.length > 0 && (
             <div className="mt-4 flex space-x-2">
-              {/* Bulk Approve button (for Pending requests only when Pending is selected in statusFilter) */}
               {statusFilter === "Pending" &&
                 selectedRequests.some(
                   (id) =>
@@ -731,7 +700,6 @@ export default function WorkFromHomeRequests() {
                   </Button>
                 )}
 
-              {/* Bulk Reject button (for Pending requests only when Pending is selected in statusFilter) */}
               {statusFilter === "Pending" &&
                 selectedRequests.some(
                   (id) =>
@@ -743,7 +711,6 @@ export default function WorkFromHomeRequests() {
                   </Button>
                 )}
 
-              {/* Bulk Revoke button (for Approved requests only when Approved is selected in statusFilter) */}
               {statusFilter === "Approved" &&
                 selectedRequests.some(
                   (id) =>
@@ -758,14 +725,12 @@ export default function WorkFromHomeRequests() {
           )}
         </>
       )}
-      {/* Action modal */}
       <Dialog open={isActionModalOpen} onOpenChange={setIsActionModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {actionType === "reject" ? "Reject Request" : "Revoke Request"}
             </DialogTitle>
-            {/* Display request details */}
             {actionRequest && (
               <div className="mt-4">
                 <p>
@@ -792,9 +757,8 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="comment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${
-                actionType === "reject" ? "rejection" : "revoking"
-              }`}
+              placeholder={`Please provide a reason for ${actionType === "reject" ? "rejection" : "revoking"
+                }`}
               value={actionComment}
               onChange={(e) => setActionComment(e.target.value)}
             />
@@ -805,7 +769,7 @@ export default function WorkFromHomeRequests() {
             </Button>
             <Button
               onClick={handleActionWithComment}
-              disabled={!actionComment.trim()} // Disable if comment is empty
+              disabled={!actionComment.trim()}
             >
               {actionType === "reject" ? "Reject" : "Revoke"}
             </Button>
@@ -813,7 +777,6 @@ export default function WorkFromHomeRequests() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk action modal */}
       <Dialog
         open={isBulkActionModalOpen}
         onOpenChange={setIsBulkActionModalOpen}
@@ -840,9 +803,8 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="bulkComment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${
-                bulkActionType === "reject" ? "rejecting" : "revoking"
-              } all selected requests`}
+              placeholder={`Please provide a reason for ${bulkActionType === "reject" ? "rejecting" : "revoking"
+                } all selected requests`}
               value={bulkActionComment}
               onChange={(e) => setBulkActionComment(e.target.value)}
             />
@@ -853,7 +815,7 @@ export default function WorkFromHomeRequests() {
             </Button>
             <Button
               onClick={handleBulkActionWithComment}
-              disabled={!bulkActionComment.trim()} // Disable if comment is empty
+              disabled={!bulkActionComment.trim()}
             >
               {bulkActionType === "reject"
                 ? `Reject ${selectedRequests.length} Requests`
@@ -874,9 +836,9 @@ export default function WorkFromHomeRequests() {
               value={`${rowsPerPage}`}
               onValueChange={(value) => {
                 setRowsPerPage(Number(value));
-                setCurrentPage(1); // Reset to first page when rows per page changes
+                setCurrentPage(1);
               }}
-              disabled={sortedRequests.length === 0} // Disable when there are no requests
+              disabled={sortedRequests.length === 0}
             >
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue placeholder={rowsPerPage} />
@@ -908,7 +870,7 @@ export default function WorkFromHomeRequests() {
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1 || totalPages === 0} // Disable if on the first page or no requests
+              disabled={currentPage === 1 || totalPages === 0}
             >
               <span className="sr-only">Go to previous page</span>
               <ChevronLeft className="h-4 w-4" />
@@ -918,7 +880,7 @@ export default function WorkFromHomeRequests() {
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages || totalPages === 0} // Disable if on the last page or no requests
+              disabled={currentPage === totalPages || totalPages === 0}
             >
               <span className="sr-only">Go to next page</span>
               <ChevronRight className="h-4 w-4" />

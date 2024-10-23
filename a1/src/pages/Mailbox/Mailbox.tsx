@@ -58,12 +58,10 @@ const Mailbox: React.FC<MailboxProps> = ({ emails, setEmails }) => {
     }
   });
 
-  // Handle sorting toggle
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
-  // Handle email selection
   const toggleSelectEmail = (id: number) => {
     setSelectedEmails((prev) =>
       prev.includes(id) ? prev.filter((emailId) => emailId !== id) : [...prev, id]
@@ -74,7 +72,6 @@ const Mailbox: React.FC<MailboxProps> = ({ emails, setEmails }) => {
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-5">Mailbox</h1>
 
-      {/* Display emails in a table */}
       {sortedEmails.length === 0 ? (
         <div>No emails found.</div>
       ) : (
@@ -127,7 +124,6 @@ const Mailbox: React.FC<MailboxProps> = ({ emails, setEmails }) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    {/* Make the "Mark as Read" button work */}
                     {email.status === "unread" && (
                       <Button size="sm" onClick={() => markAsRead(email.email_id)}>
                         Mark as Read

@@ -9,7 +9,7 @@ import {
   LogIn,
   LogOut,
   Mail,
-  FilePenLine,  // Adding a new icon for "My Request"
+  FilePenLine,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -76,49 +76,46 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
     }
   }, [isSmallScreen]);
 
-  // Handle navigation to the request page
   const handleRequestsClick = () => {
     navigate("/MakeRequest");
   };
 
-  // Handle navigation to the My Request page
+
   const handleMyRequestsClick = () => {
-    navigate("/MyRequests"); // Navigate to the MyRequest page
+    navigate("/MyRequests");
   };
 
-  // Handle navigation to the schedule page
+
   const handleScheduleClick = () => {
     navigate("/MySchedule");
   };
 
-  // Handle navigation to the mailbox page
+
   const handleMailboxClick = () => {
-    navigate("/Mailbox"); // Navigate to the Mailbox page
+    navigate("/Mailbox");
   };
 
-  // Handle navigation to the view requests page
+
   const handleViewRequestsClick = () => {
-    navigate("/ManageRequests"); // Navigate to the View Requests page
+    navigate("/ManageRequests");
   };
 
   // Function to handle sign-out
   const handleSignOut = () => {
     sessionStorage.clear(); // Clear session storage to log out the user
-    navigate("/login"); // Redirect to login page
+    navigate("/login");
   };
 
   // Function to handle sign-in
   const handleSignIn = () => {
-    navigate("/login"); // Redirect to login page
+    navigate("/login");
   };
 
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      {/* Sidebar header with brand and toggle button */}
       <div
-        className={`sidebar-header flex items-center justify-between p-4 ${
-          isSmallScreen ? "small-screen" : ""
-        }`}
+        className={`sidebar-header flex items-center justify-between p-4 ${isSmallScreen ? "small-screen" : ""
+          }`}
       >
         <h1 className="brand">{isSmallScreen ? "A1" : !collapsed && "A1"}</h1>
         {!isSmallScreen && (
@@ -127,8 +124,6 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
           </Button>
         )}
       </div>
-
-      {/* Navigation items, only shown if the user is logged in */}
       {isLoggedIn && (
         <nav className="sidebar-nav flex flex-col space-y-4 p-4">
           <NavItem
@@ -142,14 +137,12 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
             collapsed={collapsed}
             onClick={handleRequestsClick}
           />
-          {/* Add new "My Request" item */}
           <NavItem
-            icon={<ClipboardList size={24} />} // Use the List icon from Lucide for My Requests
+            icon={<ClipboardList size={24} />}
             label="My Requests"
             collapsed={collapsed}
-            onClick={handleMyRequestsClick}  // Navigate to /MyRequest
+            onClick={handleMyRequestsClick}
           />
-          {/* Only show View Requests if user role is not '2' */}
           {userRole !== 2 && (
             <NavItem
               icon={<FileCheck2 size={24} />}
@@ -165,12 +158,10 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
             onClick={handleScheduleClick}
           />
 
-          {/* Mailbox navigation item with unread count badge */}
           <NavItem
             icon={
               <div className="mail-icon-container">
                 <Mail size={24} />
-                {/* Display unread badge if there are unread emails */}
                 {unreadCount > 0 && (
                   <div className="unread-badge">{unreadCount}</div>
                 )}
@@ -182,8 +173,6 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
           />
         </nav>
       )}
-
-      {/* Sign in/out button, always visible */}
       <div className="sign-out flex items-center justify-start space-x-3 p-4 mt-auto">
         <Button
           className="sign-out-btn flex items-center space-x-3"
@@ -199,10 +188,10 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
 
 // Refactored NavItem component for clarity and reusability
 interface NavItemProps {
-  icon: React.ReactNode; // Icon to be displayed for the navigation item
-  label: string; // Label of the navigation item
-  collapsed: boolean; // Whether the sidebar is collapsed or not
-  onClick?: () => void; // Optional click handler for the navigation item
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+  onClick?: () => void;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -216,7 +205,6 @@ const NavItem: React.FC<NavItemProps> = ({
     onClick={onClick}
   >
     {icon}
-    {/* Show label only if the sidebar is not collapsed */}
     {!collapsed && <span>{label}</span>}
   </div>
 );
