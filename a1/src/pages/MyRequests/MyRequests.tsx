@@ -250,7 +250,7 @@ export default function MyRequests() {
         await axios.put(
           `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
           {
-            status: "Cancelled",
+            status: "Cancelled"
           }
         );
         toast.success("Request cancelled successfully", {
