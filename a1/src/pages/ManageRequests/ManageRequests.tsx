@@ -597,6 +597,7 @@ export default function WorkFromHomeRequests() {
                   )}
                 </TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Reason</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -636,6 +637,15 @@ export default function WorkFromHomeRequests() {
                     >
                       {request.request_type}
                     </Badge>
+                  </TableCell>
+                  <TableCell
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      maxWidth: "200px", 
+                    }}
+                  >
+                    {request.reason || "-"}
                   </TableCell>
                   <TableCell>
                     <Badge
