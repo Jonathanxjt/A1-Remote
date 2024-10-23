@@ -52,10 +52,10 @@ jobs:
     - name: Export AWS RDS URL
       run: echo "AWS_URL=${{ secrets.AWS_URL }}" >> $GITHUB_ENV
 
-    # Step 9: SSH into EC2 and run integration tests
+    # Step 9: SSH into EC2 using the Elastic IP from GitHub Secrets and run integration tests
     - name: SSH into EC2 and run integration tests
       run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@ec2-54-255-148-42.ap-southeast-1.compute.amazonaws.com '
+        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
         cd A1-Remote &&
         git pull origin main &&
         python3 -m venv venv &&
@@ -64,14 +64,15 @@ jobs:
         coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
         coverage xml
         '
+
+    # Optionally, copy coverage report from EC2 to GitHub Actions
     # - name: Copy coverage report from EC2 to GitHub Actions
     #   run: |
-    #     scp -o StrictHostKeyChecking=no ec2-user@ec2-54-255-148-42.ap-southeast-1.compute.amazonaws.com:/A1-Remote/a1/.coverage ./
-      
+    #     scp -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }}:/A1-Remote/a1/.coverage ./
+
     # - name: Show test coverage
     #   run: |
     #     coverage run -m pytest a1/tests/unit --maxfail=1 --disable-warnings -v
     #     coverage combine  # Combine coverage data from both unit and integration tests
     #     coverage report
     #     coverage xml
-    
