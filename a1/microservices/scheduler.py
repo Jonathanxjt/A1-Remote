@@ -30,6 +30,7 @@ CORS(app)
 # URLs for the microservices
 WORK_REQUEST_SERVICE_URL = "http://work-request:5003/work_request"
 SCHEDULE_SERVICE_URL = "http://schedule:5004/schedule"
+NOTIFICATION_SERVICE_URL = "http://notification:5008/notification"
 
 # To Create a new Work Request and Schedule
 @app.route("/New_WR", methods=["POST"])
@@ -64,6 +65,7 @@ def create_WkRq_Sch():
 
         # Extract the work request data
         work_request = work_request_response.json()["data"]
+        approval_manager_id = work_request["approval_manager_id"]
 
         # Step 2: Create the schedule based on the work request ID returned
         new_request_id = work_request["request_id"]
@@ -92,12 +94,29 @@ def create_WkRq_Sch():
         # Extract the schedule data
         schedule = schedule_response.json()["data"]
 
-        # Success: Return both work request and schedule details
+        notification_data = {
+            "sender_id": staff_id,  # The employee submitting the request
+            "receiver_id": approval_manager_id,  # The manager who will approve the request
+            "request_id": new_request_id,
+            "request_type": request_type,
+            "status": "Pending"  # Initial status of the work request
+        }
+
+        notification_response = requests.post(f"{NOTIFICATION_SERVICE_URL}/create_notification", json=notification_data)
+
+        if notification_response.status_code != 201:
+            return jsonify({
+                "code": notification_response.status_code,
+                "message": f"Failed to send notification: {notification_response.json().get('message', 'Unknown error')}"
+            }), notification_response.status_code
+
+        # Success: Return work request, schedule, and notification details
         return jsonify({
             "code": 201,
             "data": {
                 "work_request": work_request,
-                "schedule": schedule
+                "schedule": schedule,
+                "notification": notification_response.json()["data"]
             },
         }), 201
 
@@ -132,13 +151,17 @@ def update_work_request_and_schedule(request_id):
         }
 
         work_request_response = requests.put(work_request_url, json=work_request_payload)
-
         if work_request_response.status_code != 200:
             return jsonify({
                 "code": work_request_response.status_code,
                 "message": "Failed to update WorkRequest",
                 "details": work_request_response.json()
             }), work_request_response.status_code
+        
+        work_request = work_request_response.json()["data"]
+        approval_manager_id = work_request["approval_manager_id"]
+        receiver_id = work_request["staff_id"]
+        request_type = work_request["request_type"]
 
         schedule_url = f"{SCHEDULE_SERVICE_URL}/{request_id}/update_status"
         schedule_payload = {
@@ -168,12 +191,37 @@ def update_work_request_and_schedule(request_id):
                 "message": "Schedule update failed, WorkRequest rolled back.",
                 "details": schedule_response.json()
             }), schedule_response.status_code
+        
+        if new_status in ["Approved", "Rejected", "Revoked"]:
+            notification_data = {
+                "sender_id": approval_manager_id,  
+                "receiver_id": receiver_id,      
+                "request_id": request_id,
+                "request_type": request_type,
+                "status": new_status
+            }
+        elif new_status in ["Cancelled", "Withdrawn"]:
+            notification_data = {
+                "sender_id": receiver_id,   
+                "receiver_id": approval_manager_id,   
+                "request_id": request_id,
+                "request_type": request_type,
+                "status": new_status
+            }
+
+        notification_response = requests.post(f"{NOTIFICATION_SERVICE_URL}/create_notification", json=notification_data)
+        if notification_response.status_code != 201:
+            return jsonify({
+                "code": notification_response.status_code,
+                "message": f"Failed to send notification: {notification_response.json().get('message', 'Unknown error')}"
+            }), notification_response.status_code
 
         return jsonify({
             "code": 200,
-            "message": "WorkRequest and Schedule updated successfully.",
+            "message": "WorkRequest, Schedule, and Notification updated successfully.",
             "work_request_response": work_request_response.json(),
-            "schedule_response": schedule_response.json()
+            "schedule_response": schedule_response.json(),
+            "notification_response": notification_response.json()["data"]
         }), 200
 
     except requests.exceptions.RequestException as e:

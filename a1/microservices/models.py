@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import pytz
 # Initialize the database
 db = SQLAlchemy()
 
@@ -272,3 +273,41 @@ class Audit(db.Model):
             'comments': self.comments
         }
 
+class Notification(db.Model):
+    __tablename__ = 'notification'
+
+    notification_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('employee.staff_id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('employee.staff_id'), nullable=False)
+    request_id = db.Column(db.Integer, db.ForeignKey('work_request.request_id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+
+    notification_date = db.Column(
+        db.DateTime, 
+        default=lambda: datetime.now(pytz.timezone('Asia/Singapore')), 
+        nullable=False
+    )
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+
+    sender = db.relationship('Employee', foreign_keys=[sender_id], backref='sent_notifications')
+    receiver = db.relationship('Employee', foreign_keys=[receiver_id], backref='received_notifications')
+    work_request = db.relationship('WorkRequest', backref='notifications')
+
+    def __init__(self, sender_id, receiver_id, request_id, message):
+        self.sender_id = sender_id
+        self.receiver_id = receiver_id
+        self.request_id = request_id
+        self.message = message
+
+    def json(self):
+        return {
+            'notification_id': self.notification_id,
+            'sender_id': self.sender_id,
+            'sender_name': f"{self.sender.staff_fname} {self.sender.staff_lname}" if self.sender else None,
+            'receiver_id': self.receiver_id,
+            'receiver_name': f"{self.receiver.staff_fname} {self.receiver.staff_lname}" if self.receiver else None,
+            'request_id': self.request_id,
+            'message': self.message,
+            'notification_date': self.notification_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'is_read': self.is_read
+        }
