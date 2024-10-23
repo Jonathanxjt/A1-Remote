@@ -11,7 +11,7 @@
         "./src/*"
       ],
       "requestpage/*":[
-        "src/pages/RequestPage/request.tsx"
+        "src/pages/RequestPage/RequestPage.tsx"
       ]
     },
 

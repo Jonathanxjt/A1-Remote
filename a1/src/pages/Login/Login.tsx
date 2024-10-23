@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,10 +9,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer, Flip } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Flip, toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
 
 export default function LoginPage() {
@@ -22,7 +22,28 @@ export default function LoginPage() {
   const [error, setError] = useState({ email: "", password: "" });
   const navigate = useNavigate(); // Initialize the navigate function
 
-  const handleSubmit = async () => {
+  useEffect(() => {
+    const userData = sessionStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData); // Parse the user data from JSON format
+        console.log(user);
+        if (user) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
+        navigate("/login");
+      }
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
+    // Prevent the default form submission
+    if (e) e.preventDefault();
+
     let valid = true;
     let emailError = "";
     let passwordError = "";
@@ -45,7 +66,6 @@ export default function LoginPage() {
 
     if (valid) {
       try {
-        // Make the request to the Flask backend for authentication
         const response = await axios.post(
           "http://localhost:5001/authenticate",
           {
@@ -55,13 +75,8 @@ export default function LoginPage() {
         );
 
         if (response.data.code === 200) {
-          // Authentication successful
           console.log("Sign In Successful");
-
-          // Store the staff_id in sessionStorage
           const staffId = response.data.data.user.staff_id;
-          console.log(response.data.data.user);
-          console.log("staff_id:", staffId);
           sessionStorage.setItem("staff_id", staffId);
 
           setEmail("");
@@ -78,12 +93,10 @@ export default function LoginPage() {
             transition: Flip,
           });
 
-          // Redirect to the homepage after a short delay
           setTimeout(() => {
             navigate("/"); // Replace "/" with the path to your homepage
-          }, 1000); // Wait for 1 second to allow the toast to close
+          }, 1000);
         } else {
-          console.log("Authentication failed");
           toast.error("Login failed: Incorrect email or password!", {
             position: "top-right",
             autoClose: 3000,
@@ -113,6 +126,14 @@ export default function LoginPage() {
     }
   };
 
+  // Function to handle key press events (Enter key to submit)
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent the default form submit behavior
+      handleSubmit();
+    }
+  };
+
   return (
     <div className="login-page-container">
       {/* Add the ToastContainer */}
@@ -123,40 +144,42 @@ export default function LoginPage() {
           <CardTitle className="login-card-title">Log in</CardTitle>
           <CardDescription className="login-card-description"></CardDescription>
         </CardHeader>
-        <CardContent className="login-card-content">
-          <div className="login-input-group">
-            <Label htmlFor="email" className="login-label">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={error.email ? "input-error" : ""}
-            />
-            {error.email && <p className="error-text">{error.email}</p>}
-          </div>
-          <br></br>
-          <div className="login-input-group">
-            <Label htmlFor="password" className="login-label">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={error.password ? "input-error" : ""}
-            />
-            {error.password && <p className="error-text">{error.password}</p>}
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button className="login-button w-full" onClick={handleSubmit}>
-            Log In
-          </Button>
-        </CardFooter>
+        <form onSubmit={handleSubmit} onKeyDown={handleKeyPress}>
+          <CardContent className="login-card-content">
+            <div className="login-input-group">
+              <Label htmlFor="email" className="login-label">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={error.email ? "input-error" : ""}
+              />
+              {error.email && <p className="error-text">{error.email}</p>}
+            </div>
+            <br />
+            <div className="login-input-group">
+              <Label htmlFor="password" className="login-label">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={error.password ? "input-error" : ""}
+              />
+              {error.password && <p className="error-text">{error.password}</p>}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button className="login-button w-full" type="submit">
+              Log In
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );

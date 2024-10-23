@@ -34,8 +34,12 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Flip, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
+
 
 export default function WorkFromHomeForm() {
+  
+  const navigate = useNavigate();
   // React Hook Form for handling form state and validation
   const form = useForm({
     defaultValues: {
@@ -94,7 +98,12 @@ export default function WorkFromHomeForm() {
           progress: undefined,
           theme: "dark",
           transition: Flip,
+          
         });
+        setTimeout(() => {
+          navigate("/MyRequests");
+        }, 2500);
+
       }
     } catch (error: any) {
       // Extract error message from Axios response

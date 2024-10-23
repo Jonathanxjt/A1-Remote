@@ -44,10 +44,29 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Flip, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function WorkFromHomeRequests() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch the user data from sessionStorage
+    const userData = sessionStorage.getItem("user");
+
+    if (userData) {
+      const user = JSON.parse(userData); // Parse the user data from JSON format
+      console.log(user);
+      if (user.role !== 1 && user.role !== 3) {
+        navigate("/");
+      }
+    } else {
+      // If no user data found in sessionStorage, redirect to the login page
+      navigate("/login");
+    }
+  }, [navigate]);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,6 +93,15 @@ export default function WorkFromHomeRequests() {
     "reject"
   );
   const [bulkActionComment, setBulkActionComment] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("Pending"); // Default to 'Pending'
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    // Here you can add additional logic to refetch or filter requests based on the selected status
+    console.log(`Selected status: ${value}`);
+  };
 
   // Fetch all employees and store in a dictionary
   const fetchAllEmployees = async () => {
@@ -107,7 +135,8 @@ export default function WorkFromHomeRequests() {
         );
         if (response.data.code === 200) {
           const pendingRequests = response.data.data.work_request.filter(
-            (request: any) => request.status === "Pending"
+            (request: any) =>
+              request.status === "Pending" || request.status === "Approved"
           );
           setRequests(pendingRequests); // Store the requests
         } else {
@@ -132,38 +161,51 @@ export default function WorkFromHomeRequests() {
     fetchRequests(); // Fetch work requests
   }, []);
 
-  // Filter requests based on view filter (all, today, week, month)
   const filterRequests = (requests: any[]) => {
     const today = new Date();
-    switch (viewFilter) {
-      case "today":
-        return requests.filter((request) =>
-          isSameDay(new Date(request.request_date), today)
-        );
-      case "week":
-        const weekStart = startOfWeek(today);
-        const weekEnd = endOfWeek(today);
-        return requests.filter((request) =>
-          isWithinInterval(new Date(request.request_date), {
+
+    // Filter by status
+    const filteredByStatus = requests.filter(
+      (request) => request.status === statusFilter
+    );
+
+    const filteredRequests = filteredByStatus.filter((request) => {
+      const requestDate = new Date(request.request_date);
+
+      switch (viewFilter) {
+        case "today":
+          return isSameDay(requestDate, today);
+        case "week":
+          const weekStart = startOfWeek(today);
+          const weekEnd = endOfWeek(today);
+          return isWithinInterval(requestDate, {
             start: weekStart,
             end: weekEnd,
-          })
-        );
-      case "month":
-        const [year, month] = selectedMonth.split("-");
-        const monthStart = startOfMonth(
-          new Date(parseInt(year), parseInt(month) - 1)
-        );
-        const monthEnd = endOfMonth(monthStart);
-        return requests.filter((request) =>
-          isWithinInterval(new Date(request.request_date), {
+          });
+        case "month":
+          const [year, month] = selectedMonth.split("-");
+          const monthStart = startOfMonth(
+            new Date(parseInt(year), parseInt(month) - 1)
+          );
+          const monthEnd = endOfMonth(monthStart);
+          return isWithinInterval(requestDate, {
             start: monthStart,
             end: monthEnd,
-          })
-        );
-      default:
-        return requests;
-    }
+          });
+        case "custom":
+          if (dateRange?.from && dateRange?.to) {
+            return isWithinInterval(requestDate, {
+              start: dateRange.from,
+              end: dateRange.to,
+            });
+          }
+          return true; // If no date range is selected, show all requests
+        default:
+          return true; // Return all if no specific viewFilter is selected
+      }
+    });
+
+    return filteredRequests;
   };
 
   // Sort filtered requests by date
@@ -191,7 +233,7 @@ export default function WorkFromHomeRequests() {
   useEffect(() => {
     setCurrentPage(1); // Reset page to 1 when filter or month changes
     setSelectedRequests([]); // Clear selected requests when filter or date range changes
-  }, [viewFilter, selectedMonth]);
+  }, [viewFilter, selectedMonth, dateRange]);
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -319,80 +361,80 @@ export default function WorkFromHomeRequests() {
     setSelectedRequests([]); // Clear selected requests after processing
   };
 
-// Open modal for both reject and revoke actions
-const openActionModal = (request: any, type: "reject" | "revoke") => {
-  console.log(`${type} request:`, request); // Log the request object
-  setActionType(type); // Set the action type (reject/revoke)
-  setActionRequest(request); // Store the request to display details
-  setIsActionModalOpen(true); // Open the modal
-};
+  // Open modal for both reject and revoke actions
+  const openActionModal = (request: any, type: "reject" | "revoke") => {
+    console.log(`${type} request:`, request); // Log the request object
+    setActionType(type); // Set the action type (reject/revoke)
+    setActionRequest(request); // Store the request to display details
+    setIsActionModalOpen(true); // Open the modal
+  };
 
-const closeActionModal = () => {
-  setActionComment(""); // Reset the comment field
-  setIsActionModalOpen(false); // Close the modal
-};
+  const closeActionModal = () => {
+    setActionComment(""); // Reset the comment field
+    setIsActionModalOpen(false); // Close the modal
+  };
 
-const handleActionWithComment = async () => {
-  try {
-    const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
+  const handleActionWithComment = async () => {
+    try {
+      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked"; // Determine status based on action
 
-    console.log(
-      `${statusUpdate} request:`,
-      actionRequest,
-      "with comment:",
-      actionComment
-    );
+      console.log(
+        `${statusUpdate} request:`,
+        actionRequest,
+        "with comment:",
+        actionComment
+      );
 
-    // Call the backend API to update the work request and schedule
-    await axios.put(
-      `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
-      {
-        status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
-        comments: actionComment, // Pass the comment provided by the user
-      }
-    );
-    toast.success(`${statusUpdate} Request!`, {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-      transition: Flip,
-    });
+      // Call the backend API to update the work request and schedule
+      await axios.put(
+        `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+        {
+          status: statusUpdate, // Set the status as 'Rejected' or 'Revoked'
+          comments: actionComment, // Pass the comment provided by the user
+        }
+      );
+      toast.success(`${statusUpdate} Request!`, {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
 
-    // Filter out the successfully handled request from selectedRequests
-    setSelectedRequests((prevSelectedRequests) =>
-      prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
-    );
+      // Filter out the successfully handled request from selectedRequests
+      setSelectedRequests((prevSelectedRequests) =>
+        prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+      );
 
-    // After successful response, close the modal
-    closeActionModal();
-    // Refetch requests after successful approval to update the UI with the latest data
-    fetchRequests();
-  } catch (error) {
-    console.error(`Error ${actionType}ing request:`, error);
-    const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked";
-    toast.error(`Failed to ${statusUpdate.slice(0, -2)} Request!`, {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-      transition: Flip,
-    });
+      // After successful response, close the modal
+      closeActionModal();
+      // Refetch requests after successful approval to update the UI with the latest data
+      fetchRequests();
+    } catch (error) {
+      console.error(`Error ${actionType}ing request:`, error);
+      const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked";
+      toast.error(`Failed to ${statusUpdate.slice(0, -2)} Request!`, {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Flip,
+      });
 
-    // Filter out the failed request from selectedRequests even on failure
-    setSelectedRequests((prevSelectedRequests) =>
-      prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
-    );
-  }
-};
+      // Filter out the failed request from selectedRequests even on failure
+      setSelectedRequests((prevSelectedRequests) =>
+        prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+      );
+    }
+  };
 
   // Bulk action modal handler
   const openBulkActionModal = (type: "reject" | "revoke") => {
@@ -481,38 +523,77 @@ const handleActionWithComment = async () => {
       <ToastContainer />
       <h1 className="text-2xl font-bold mb-5">Work From Home Requests</h1>
       <div className="flex space-x-4 mb-4">
-        <Select value={viewFilter} onValueChange={setViewFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">Month</SelectItem>
-          </SelectContent>
-        </Select>
-        {viewFilter === "month" && (
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+        <div className="flex flex-col">
+          <label htmlFor="view-filter" className="text-sm font-medium mb-1">
+            Filter by Date
+          </label>
+          <Select value={viewFilter} onValueChange={setViewFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select month" />
+              <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
-              {Array.from({ length: 12 - new Date().getMonth() }, (_, i) => {
-                const date = new Date(
-                  new Date().getFullYear(),
-                  new Date().getMonth() + i,
-                  1
-                );
-                return (
-                  <SelectItem key={i} value={format(date, "yyyy-MM")}>
-                    {format(date, "MMMM yyyy")}
-                  </SelectItem>
-                );
-              })}
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        {viewFilter === "month" && (
+          <div className="flex flex-col">
+            <label htmlFor="month" className="text-sm font-medium mb-1">
+              Month
+            </label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 - new Date().getMonth() }, (_, i) => {
+                  const date = new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth() + i,
+                    1
+                  );
+                  return (
+                    <SelectItem key={i} value={format(date, "yyyy-MM")}>
+                      {format(date, "MMMM yyyy")}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         )}
+        {viewFilter === "custom" && (
+          <div className="flex flex-col">
+            <label htmlFor="date-range" className="text-sm font-medium mb-1">
+              Date Range
+            </label>
+            <DateRangePicker
+              from={dateRange?.from}
+              to={dateRange?.to}
+              onSelect={(range) => setDateRange(range)}
+            />
+          </div>
+        )}
+        {/* Status filter dropdown */}
+
+        <div className="flex flex-col">
+          <label htmlFor="status" className="text-sm font-medium mb-1">
+            Status
+          </label>
+          <Select onValueChange={handleStatusChange} value={statusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Approved">Approved</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {/** Display requests in a table */}
       {paginatedRequests.length === 0 ? (
@@ -574,7 +655,7 @@ const handleActionWithComment = async () => {
                       className={cn({
                         "bg-blue-100 text-blue-800":
                           request.request_type === "AM",
-                        "bg-green-100 text-green-800":
+                        "bg-pink-100 text-pink-800":
                           request.request_type === "PM",
                         "bg-purple-100 text-purple-800":
                           request.request_type === "Full Day",
@@ -586,34 +667,49 @@ const handleActionWithComment = async () => {
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className="bg-yellow-100 text-yellow-800"
+                      className={cn({
+                        "bg-yellow-100 text-yellow-800":
+                          request.status === "Pending",
+                        "bg-green-100 text-green-800":
+                          request.status === "Approved",
+                      })}
                     >
                       {request.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      {/* Approve button to directly approve the request */}
-                      <Button
-                        size="sm"
-                        onClick={() => handleApproveRequest(request.request_id)}
-                      >
-                        Approve
-                      </Button>
-                      {/* Reject button to open a modal for rejecting the request */}
-                      <Button
-                        size="sm"
-                        onClick={() => openActionModal(request, "reject")}
-                      >
-                        Reject
-                      </Button>
-                      {/* Revoke button to open a modal for revoking the request */}
-                      <Button
-                        size="sm"
-                        onClick={() => openActionModal(request, "revoke")}
-                      >
-                        Revoke
-                      </Button>
+                      {request.status === "Pending" && (
+                        <>
+                          {/* Approve button for Pending requests */}
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleApproveRequest(request.request_id)
+                            }
+                          >
+                            Approve
+                          </Button>
+                          {/* Reject button for Pending requests */}
+                          <Button
+                            size="sm"
+                            onClick={() => openActionModal(request, "reject")}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {request.status === "Approved" && (
+                        <>
+                          {/* Revoke button for Approved requests */}
+                          <Button
+                            size="sm"
+                            onClick={() => openActionModal(request, "revoke")}
+                          >
+                            Revoke
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -623,13 +719,41 @@ const handleActionWithComment = async () => {
 
           {selectedRequests.length > 0 && (
             <div className="mt-4 flex space-x-2">
-              <Button onClick={handleBulkApproveRequests}>Approve All</Button>
-              <Button onClick={() => openBulkActionModal("reject")}>
-                Reject All
-              </Button>
-              <Button onClick={() => openBulkActionModal("revoke")}>
-                Revoke All
-              </Button>
+              {/* Bulk Approve button (for Pending requests only when Pending is selected in statusFilter) */}
+              {statusFilter === "Pending" &&
+                selectedRequests.some(
+                  (id) =>
+                    requests.find((r) => r.request_id === id)?.status ===
+                    "Pending"
+                ) && (
+                  <Button onClick={handleBulkApproveRequests}>
+                    Approve All
+                  </Button>
+                )}
+
+              {/* Bulk Reject button (for Pending requests only when Pending is selected in statusFilter) */}
+              {statusFilter === "Pending" &&
+                selectedRequests.some(
+                  (id) =>
+                    requests.find((r) => r.request_id === id)?.status ===
+                    "Pending"
+                ) && (
+                  <Button onClick={() => openBulkActionModal("reject")}>
+                    Reject All
+                  </Button>
+                )}
+
+              {/* Bulk Revoke button (for Approved requests only when Approved is selected in statusFilter) */}
+              {statusFilter === "Approved" &&
+                selectedRequests.some(
+                  (id) =>
+                    requests.find((r) => r.request_id === id)?.status ===
+                    "Approved"
+                ) && (
+                  <Button onClick={() => openBulkActionModal("revoke")}>
+                    Revoke All
+                  </Button>
+                )}
             </div>
           )}
         </>
