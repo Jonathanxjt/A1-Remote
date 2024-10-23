@@ -38,7 +38,7 @@ const EmployeeStatusPieChart: React.FC<EmployeeStatusPieChartProps> =
     // Chart options
     const options = {
       chart: {
-        width: 400,
+        width: "100%",
         height: 400,
       },
       series: {

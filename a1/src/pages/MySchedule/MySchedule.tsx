@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Employee } from "src/Models/Employee"; 
+import { Employee } from "src/Models/Employee";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -60,7 +60,9 @@ export default function Component() {
   useEffect(() => {
     const fetchWorkRequests = async () => {
       try {
-        const response = await axios.get("http://localhost:5004/schedule/150318/employee")
+        const response = await axios.get(
+          "http://localhost:5004/schedule/150318/employee"
+        );
         if (response.data.code === 200) {
           const requests = response.data.data.work_request
             .filter(
@@ -90,8 +92,7 @@ export default function Component() {
 
     const fetchEmployeesUnderManager = async () => {
       try {
-        console.log(sessionStorage.getItem("user"));
-        const user = JSON.parse(sessionStorage.getItem("user") || '{}');
+        const user = JSON.parse(sessionStorage.getItem("user") || "{}");
         const reportingManagerId = user.reporting_manager;
         const response = await axios.get(
           `http://localhost:5004/schedule/team/${reportingManagerId}`
@@ -101,9 +102,7 @@ export default function Component() {
           const employeesAMList: Employee[] = [];
           const employeesPMList: Employee[] = [];
 
-          const currentDate = new Date();
           const currentDateString = currentDate.toUTCString().split(",")[0]; // Format it to match "Tue, 15 Oct 2024"
-
           response.data.data.forEach((item: any) => {
             const employee = item.employee;
             const schedule = item.schedule;
@@ -111,7 +110,7 @@ export default function Component() {
             const employeeData: Employee = {
               id: employee.staff_id,
               fullName: `${employee.staff_fname} ${employee.staff_lname}`,
-              status: "In Office", 
+              status: "In Office",
               email: employee.email,
               position: employee.position,
             };
@@ -123,18 +122,19 @@ export default function Component() {
               const todaySchedule = schedule.filter((s: any) => {
                 const scheduleDate = new Date(s.date)
                   .toUTCString()
-                  .split(",")[0]; 
+                  .split(",")[0];
                 return scheduleDate === currentDateString;
               });
 
               const hasAM = todaySchedule.some(
-                (s: any) => s.request_type === "AM"  && s.status === "Approved"
+                (s: any) => s.request_type === "AM" && s.status === "Approved"
               );
               const hasPM = todaySchedule.some(
-                (s: any) => s.request_type === "PM"  && s.status === "Approved"
+                (s: any) => s.request_type === "PM" && s.status === "Approved"
               );
               const isFullDay = todaySchedule.some(
-                (s: any) => s.request_type === "Full Day"  && s.status === "Approved"
+                (s: any) =>
+                  s.request_type === "Full Day" && s.status === "Approved"
               );
 
               // Parse the schedule to determine AM/PM/Full-day shifts
@@ -176,7 +176,7 @@ export default function Component() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [currentDate]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -188,16 +188,40 @@ export default function Component() {
 
   const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentDate);
 
-  const prevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
+  const prev = () => {
+    if (currentView === "month") {
+      // If in month view, go to the next month
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      );
+    } else if (currentView === "day") {
+      // If in day view, go to the next day
+      setCurrentDate(
+        new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate() - 1
+        )
+      );
+    }
   };
 
-  const nextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
+  const next = () => {
+    if (currentView === "month") {
+      // If in month view, go to the next month
+      setCurrentDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      );
+    } else if (currentView === "day") {
+      // If in day view, go to the next day
+      setCurrentDate(
+        new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate() + 1
+        )
+      );
+    }
   };
 
   const getStatusBadge = (status: WorkStatus) => {
@@ -327,43 +351,76 @@ export default function Component() {
       (employee) => employee.status === "PM" || employee.status === "Full"
     ).length;
     const totalAMinOfficeCount = employeesAM.length - totalAMCount;
-    const totalPMInOfficeCount = employeesPM.length - totalPMCount;
+    const totalPMinOfficeCount = employeesPM.length - totalPMCount;
+    const [searchTermAM, setSearchTermAM] = useState("");
+    const [searchTermPM, setSearchTermPM] = useState("");
+
+
+    const filteredEmployeesAM = employeesAM.filter((employee) =>
+      employee.fullName.toLowerCase().includes(searchTermAM.toLowerCase())
+    );
+
+    const filteredEmployeesPM = employeesPM.filter((employee) =>
+      employee.fullName.toLowerCase().includes(searchTermPM.toLowerCase())
+    );
 
     return (
       <>
         <div className="mt-6 flex space-x-4">
           <div className="w-1/2 pr-2 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
-            <h4 className="font-bold">AM Status</h4>
-            <div className="mt-4 flex justify-start">
-              <div className="text-center">
-                <h5 className="text-lg">{totalAMCount}</h5>
+            {/* AM Count */}
+            <h4 className="text-3xl font-bold">AM Status</h4>
+            <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
+              <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
+                <h5 className="text-3xl">{totalAMCount}</h5>
                 <p className="text-sm text-gray-500">WFH</p>
               </div>
-              <div className="text-center pl-4">
-                <h5 className="text-lg">{totalAMinOfficeCount}</h5>
+              <div className="border-l border-gray-300 h-12 mx-4"></div>
+              <div className="text-center flex-grow bg-green-100 p-4 rounded-md">
+                <h5 className="text-3xl">{totalAMinOfficeCount}</h5>
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
+            {/* Search Input */}
+            <input
+              type="text"
+              className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
+              placeholder="Search employees..."
+              value={searchTermAM}
+              onChange={(e) => setSearchTermAM(e.target.value)}
+            />
+            {/* AM WFH  */}
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
                 <ul className="list-disc pl-5">
-                  {employeesAM
+                  {filteredEmployeesAM
                     .filter(
                       (employee) =>
                         employee.status === "AM" || employee.status === "Full"
                     )
+                    .sort((a, b) =>
+                      a.fullName
+                        .split(" ")[1]
+                        .localeCompare(b.fullName.split(" ")[1])
+                    ) // Sorting by last name
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
                 </ul>
               </div>
+              {/* AM in office */}
               <div className="w-1/2">
                 <h6 className="font-semibold">In Office:</h6>
                 <ul className="list-disc pl-5">
-                  {employeesAM
+                  {filteredEmployeesAM
                     .filter((employee) => employee.status === "In Office")
+                    .sort((a, b) =>
+                      a.fullName
+                        .split(" ")[1]
+                        .localeCompare(b.fullName.split(" ")[1])
+                    ) // Sorting by last name
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -374,48 +431,66 @@ export default function Component() {
 
           <div className="w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
-            <div className="mt-4">
-              <h4 className="font-bold">PM Status</h4>
-              <div className="mt-4 flex justify-start">
-                <div className="text-center">
-                  <h5 className="text-lg">{totalPMCount}</h5>
-                  <p className="text-sm text-gray-500">WFH</p>
-                </div>
-                <div className="text-center pl-4">
-                  <h5 className="text-lg">{totalPMInOfficeCount}</h5>
-                  <p className="text-sm text-gray-500">In Office</p>
-                </div>
+            {/* PM Count */}
+            <h4 className="text-3xl font-bold">PM Status</h4>
+            <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
+              <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
+                <h5 className="text-3xl">{totalPMCount}</h5>
+                <p className="text-sm text-gray-500">WFH</p>
               </div>
+              <div className="border-l border-gray-300 h-12 mx-4"></div>
+              <div className="text-center flex-grow bg-green-100 p-4 rounded-md">
+                <h5 className="text-3xl">{totalPMinOfficeCount}</h5>
+                <p className="text-sm text-gray-500">In Office</p>
+              </div>
+            </div>
+            {/* Search Input */}
+            <input
+              type="text"
+              className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
+              placeholder="Search employees..."
+              value={searchTermPM}
+              onChange={(e) => setSearchTermPM(e.target.value)}
+            />
+            {/* PM WFH  */}
               <div className="flex space-x-4 mt-2">
                 <div className="w-1/2">
                   <h6 className="font-semibold">Working From Home:</h6>
                   <ul className="list-disc pl-5">
-                    {employeesAM
-                      .filter(
-                        (employee) =>
-                          employee.status === "PM" || employee.status === "Full"
-                      )
-                      .map((employee) => (
-                        <li key={employee.id}>{employee.fullName}</li>
-                      ))}
-                  </ul>
+                  {filteredEmployeesPM
+                    .filter(
+                      (employee) =>
+                        employee.status === "PM" || employee.status === "Full"
+                    )
+                    .sort((a, b) =>
+                      a.fullName
+                        .split(" ")[1]
+                        .localeCompare(b.fullName.split(" ")[1])
+                    ) // Sorting by last name
+                    .map((employee) => (
+                      <li key={employee.id}>{employee.fullName}</li>
+                    ))}
+                </ul>
                 </div>
                 <div className="w-1/2">
                   <h6 className="font-semibold">In Office:</h6>
                   <ul className="list-disc pl-5">
-                    {employeesAM
-                      .filter((employee) => employee.status === "In Office")
-                      .map((employee) => (
-                        <li key={employee.id}>{employee.fullName}</li>
-                      ))}
-                  </ul>
+                  {filteredEmployeesPM
+                    .filter((employee) => employee.status === "In Office")
+                    .sort((a, b) =>
+                      a.fullName
+                        .split(" ")[1]
+                        .localeCompare(b.fullName.split(" ")[1])
+                    ) // Sorting by last name
+                    .map((employee) => (
+                      <li key={employee.id}>{employee.fullName}</li>
+                    ))}
+                </ul>
                 </div>
               </div>
-            </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </>
     );
   };
@@ -478,13 +553,20 @@ export default function Component() {
                 <TabsTrigger value="month">Month</TabsTrigger>
               </TabsList>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                <Button variant="outline" size="icon" onClick={prevMonth}>
+                <Button variant="outline" size="icon" onClick={prev}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
-                  {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  {currentView === "day"
+                    ? `${currentDate.getDate()} ${
+                        months[currentDate.getMonth()]
+                      }` 
+                    : `${
+                        months[currentDate.getMonth()]
+                      } ${currentDate.getFullYear()}`}{" "}
+                
                 </h2>
-                <Button variant="outline" size="icon" onClick={nextMonth}>
+                <Button variant="outline" size="icon" onClick={next}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
