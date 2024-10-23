@@ -96,6 +96,29 @@ def create_app():
             }), 200
         except Exception as e:
             return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
+
+    @app.route("/notification/delete_notification/<int:notification_id>", methods=['DELETE'])
+    def delete_notification(notification_id):
+        try:
+            notification_query = db.session.query(Notification).filter_by(notification_id=notification_id).first()
+            if not notification_query:
+                return jsonify({
+                    "code": 404,
+                    "message": "Notification not found."
+                }), 404
+
+            db.session.delete(notification_query)
+            db.session.commit()
+
+            return jsonify({
+                "code": 200,
+                "message": "Notification deleted successfully."
+            }), 200
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
+
     return app
 
 if __name__ == "__main__":
