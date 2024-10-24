@@ -16,6 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import {
@@ -42,17 +50,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function MyRequests() {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const userData = sessionStorage.getItem("user");
-    if (userData) {
-      const user = JSON.parse(userData);
-      if (!user) {
-        navigate("/login");
-      }
-    }
-  }, [navigate]);
-
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -65,9 +62,20 @@ export default function MyRequests() {
   const [managerCache, setManagerCache] = useState<{ [key: number]: string }>(
     {}
   );
-
   const [dateRange, setDateRange] = useState({ from: null, to: null });
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+
+  useEffect(() => {
+    const userData = sessionStorage.getItem("user");
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (!user) {
+        navigate("/login");
+      }
+    }
+  }, [navigate]);
 
   const fetchAllManagers = async () => {
     try {
@@ -81,7 +89,6 @@ export default function MyRequests() {
           managerDict[manager.staff_id] = manager.staff_fname;
         });
         setManagerCache(managerDict);
-        console.log(response.data);
       } else {
         console.error("Error fetching managers: ", response.data.message);
       }
@@ -126,7 +133,6 @@ export default function MyRequests() {
     return requests.filter((request) => {
       const requestDate = new Date(request.request_date);
 
-      // Apply status filter
       if (statusFilter !== "All" && request.status !== statusFilter) {
         return false;
       }
@@ -243,29 +249,48 @@ export default function MyRequests() {
     }
   };
 
-  const handleCancel = async (requestId: number) => {
-    try {
-      const request = requests.find((r) => r.request_id === requestId);
-      if (request && request.status === "Pending") {
-        await axios.put(
-          `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
-          {
-            status: "Cancelled"
-          }
-        );
-        toast.success("Request cancelled successfully", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "dark",
-          transition: Flip,
-        });
-        fetchRequests();
-      } else {
+  const handleCancelClick = (request: any) => {
+    setSelectedRequest(request);
+    setIsDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (selectedRequest) {
+      try {
+        if (selectedRequest.status === "Pending") {
+          await axios.put(
+            `http://localhost:5005/scheduler/${selectedRequest.request_id}/update_work_request_and_schedule`,
+            {
+              status: "Cancelled"
+            }
+          );
+          toast.success("Request cancelled successfully", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Flip,
+          });
+          fetchRequests();
+        } else {
+          toast.error("Failed to cancel request", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Flip,
+          });
+        }
+      } catch (error) {
+        console.error("Error cancelling request:", error);
         toast.error("Failed to cancel request", {
           position: "top-right",
           autoClose: 4000,
@@ -278,20 +303,9 @@ export default function MyRequests() {
           transition: Flip,
         });
       }
-    } catch (error) {
-      console.error("Error cancelling request:", error);
-      toast.error("Failed to cancel request", {
-        position: "top-right",
-        autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-        transition: Flip,
-      });
     }
+    setIsDialogOpen(false);
+    setSelectedRequest(null);
   };
 
   if (loading) {
@@ -425,6 +439,7 @@ export default function MyRequests() {
                     >
                       {request.request_type}
                     </Badge>
+                
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -453,13 +468,13 @@ export default function MyRequests() {
                       maxWidth: "200px",
                     }}
                   >
-                    {request.comments || "No comments"}
+                    {request.comments || "-"}
                   </TableCell>
                   <TableCell>
                     {request.status === "Pending" && (
                       <Button
                         size="sm"
-                        onClick={() => handleCancel(request.request_id)}
+                        onClick={() => handleCancelClick(request)}
                       >
                         Cancel
                       </Button>
@@ -548,6 +563,31 @@ export default function MyRequests() {
           </div>
         </div>
       </div>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Cancellation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this request for{" "}
+              {selectedRequest && (
+                <span className="font-semibold">
+                  {format(new Date(selectedRequest.request_date), "EEEE, MMMM d, yyyy")}
+                </span>
+              )}
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+          <Button onClick={handleCancelConfirm}>
+              Yes, cancel it
+            </Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              No, keep it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

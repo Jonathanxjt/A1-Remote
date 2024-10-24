@@ -64,6 +64,19 @@ services:
       - .env
     networks:
       - my_network
+  
+  notification:
+    build:
+      context: .
+      dockerfile: dockerfile_notification
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "5008:5008"
+    environment:
+      - .env
+    networks:
+      - my_network
 
 networks:
   my_network:

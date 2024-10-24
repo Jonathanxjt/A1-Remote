@@ -66,6 +66,21 @@ CREATE TABLE Audit (
     FOREIGN KEY (Manager_ID) REFERENCES Employee(Staff_ID)
 );
 
+
+CREATE TABLE Notification (
+    Notification_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Sender_ID INT NOT NULL,  
+    Receiver_ID INT NOT NULL,
+    Request_ID INT NOT NULL,  
+    Message TEXT NOT NULL,  
+    Notification_Date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    Is_Read BOOLEAN NOT NULL DEFAULT FALSE, 
+    FOREIGN KEY (Sender_ID) REFERENCES Employee(Staff_ID),
+    FOREIGN KEY (Receiver_ID) REFERENCES Employee(Staff_ID),
+    FOREIGN KEY (Request_ID) REFERENCES Work_Request(Request_ID)
+);
+
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
@@ -112,7 +127,18 @@ VALUES
 (4, 150318, '2024-10-18', 4, 151408, 'Full Day', 'Approved'),
 (5, 150318, '2024-10-19', 5, 151408, 'Full Day', 'Rejected');
 
+INSERT INTO Notification (Sender_ID, Receiver_ID, Request_ID, Message, Notification_Date, Is_Read)
+VALUES 
+(151408, 150318, 1, 'Your WFH request for 2024-10-15 is pending.', '2024-10-05 10:00:00', FALSE),
+(151408, 150318, 2, 'Your WFH request for 2024-10-16 is pending.', '2024-10-05 10:15:00', FALSE),
+(151408, 150318, 3, 'Your WFH request for 2024-10-17 is pending.', '2024-10-05 10:30:00', FALSE),
+(151408, 150318, 4, 'Your WFH request for 2024-10-18 has been approved.', '2024-10-11 09:00:00', TRUE),
+(151408, 150318, 5, 'Your WFH request for 2024-10-19 has been rejected. You need to work more in the office.', '2024-10-11 09:15:00', TRUE);
 
-
-
-
+INSERT INTO Notification (Sender_ID, Receiver_ID, Request_ID, Message, Notification_Date, Is_Read)
+VALUES 
+(150318, 151408, 1, 'I have submitted a WFH request for 2024-10-15.', '2024-10-05 08:45:00', TRUE),
+(150318, 151408, 2, 'I have submitted a WFH request for 2024-10-16.', '2024-10-05 08:50:00', TRUE),
+(150318, 151408, 3, 'I have submitted a WFH request for 2024-10-17.', '2024-10-05 08:55:00', TRUE),
+(150318, 151408, 4, 'I have submitted a WFH request for 2024-10-18.', '2024-10-05 09:00:00', TRUE),
+(150318, 151408, 5, 'I have submitted a WFH request for 2024-10-19.', '2024-10-05 09:05:00', TRUE);
