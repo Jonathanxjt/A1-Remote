@@ -51,16 +51,24 @@ export default function Component() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
+  const [user, setUser] = useState(() => {
+    return JSON.parse(sessionStorage.getItem("user") || "{}");
+  });
+
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
   };
-
+  
   useEffect(() => {
     const fetchWorkRequests = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5004/schedule/150318/employee"
+          `http://localhost:5004/schedule/${user.staff_id}/employee`
         );
         if (response.data.code === 200) {
           const requests = response.data.data.work_request
@@ -91,7 +99,7 @@ export default function Component() {
 
     const fetchEmployeesUnderManager = async () => {
       try {
-        const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+
         const reportingManagerId = user.reporting_manager;
         const response = await axios.get(
           `http://localhost:5004/schedule/team/${reportingManagerId}`
