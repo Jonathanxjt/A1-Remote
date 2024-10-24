@@ -55,7 +55,6 @@ export default function Component() {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
   });
 
-
   useEffect(() => {
     console.log(user);
   }, [user]);
@@ -63,7 +62,89 @@ export default function Component() {
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
   };
-  
+
+  const fetchEmployeesUnderManagerForDay = async (date: Date) => {
+    try {
+      const reportingManagerId = user.reporting_manager;
+      const response = await axios.get(
+        `http://localhost:5004/schedule/team/${reportingManagerId}`
+      );
+
+      if (response.data.code === 200) {
+        let wfhCountAM = 0;
+        let inOfficeCountAM = 0;
+        let wfhCountPM = 0;
+        let inOfficeCountPM = 0;
+
+        // Format the input date to 'YYYY-MM-DD'
+        const formattedDate = date.toISOString().split("T")[0];
+
+        response.data.data.forEach((item: any) => {
+          const schedule = item.schedule;
+
+          if (!schedule || schedule === "No schedule found.") {
+            inOfficeCountAM += 1;
+            inOfficeCountPM += 1;
+          } else {
+            const todaySchedule = schedule.filter((s: any) => {
+              // Format the schedule date to 'YYYY-MM-DD'
+              const scheduleDate = new Date(s.date).toISOString().split("T")[0];
+
+              // Compare only the date parts
+              return scheduleDate === formattedDate;
+            });
+
+            const hasAM = todaySchedule.some(
+              (s: any) => s.request_type === "AM" && s.status === "Approved"
+            );
+            const hasPM = todaySchedule.some(
+              (s: any) => s.request_type === "PM" && s.status === "Approved"
+            );
+            const isFullDay = todaySchedule.some(
+              (s: any) =>
+                s.request_type === "Full Day" && s.status === "Approved"
+            );
+
+            // Increment counters based on schedule
+            if (hasAM) {
+              wfhCountAM++; // Employee is WFH for AM
+            } else {
+              inOfficeCountAM++; // Employee is in office for AM
+            }
+
+            if (hasPM) {
+              wfhCountPM++; // Employee is WFH for PM
+            } else {
+              inOfficeCountPM++; // Employee is in office for PM
+            }
+
+            // If they have a full day schedule, increment both counts
+            if (isFullDay) {
+              wfhCountAM++; // Full Day also counts for AM
+              wfhCountPM++; // Full Day also counts for PM
+            }
+          }
+        });
+
+        // Return WFH and In Office counters for AM and PM
+        return {
+          wfhCountAM,
+          inOfficeCountAM,
+          wfhCountPM,
+          inOfficeCountPM,
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      return {
+        wfhCountAM: 0,
+        inOfficeCountAM: 0,
+        wfhCountPM: 0,
+        inOfficeCountPM: 0,
+      };
+    }
+  };
+
   useEffect(() => {
     const fetchWorkRequests = async () => {
       try {
@@ -99,7 +180,6 @@ export default function Component() {
 
     const fetchEmployeesUnderManager = async () => {
       try {
-
         const reportingManagerId = user.reporting_manager;
         const response = await axios.get(
           `http://localhost:5004/schedule/team/${reportingManagerId}`
@@ -109,7 +189,6 @@ export default function Component() {
           const employeesAMList: Employee[] = [];
           const employeesPMList: Employee[] = [];
 
-          const currentDateString = currentDate.toUTCString().split(",")[0]; // Format it to match "Tue, 15 Oct 2024"
           response.data.data.forEach((item: any) => {
             const employee = item.employee;
             const schedule = item.schedule;
@@ -128,8 +207,13 @@ export default function Component() {
             } else {
               const todaySchedule = schedule.filter((s: any) => {
                 const scheduleDate = new Date(s.date)
-                  .toUTCString()
-                  .split(",")[0];
+                  .toISOString()
+                  .split("T")[0];
+                const currentDateString = currentDate
+                  .toISOString()
+                  .split("T")[0];
+                  // console.log("Schedule date:", scheduleDate);
+                  console.log("Current date:", currentDateString);
                 return scheduleDate === currentDateString;
               });
 
@@ -154,7 +238,7 @@ export default function Component() {
                 employeeData.status = "PM";
                 employeesPMList.push(employeeData);
                 employeeData.status = "In Office";
-                employeesAMList.push(employeeData); 
+                employeesAMList.push(employeeData);
               }
               if (isFullDay) {
                 employeeData.status = "Full";
@@ -174,7 +258,6 @@ export default function Component() {
         console.error("Error fetching employees:", error);
       }
     };
-
     fetchEmployeesUnderManager();
 
     const timer = setInterval(() => {
@@ -195,34 +278,36 @@ export default function Component() {
   const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentDate);
 
   const prev = () => {
-    if (currentView === "month") {
-      setCurrentDate(
-        new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    if (currentView === "day") {
+      // Go to the previous day
+      const previousDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
+      previousDate.setDate(previousDate.getDate() - 1); // Subtract one day
+      setCurrentDate(previousDate);
+    } else if (currentView === "month") {
+      // Go to the previous month (first day of the month)
+      const previousMonthDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - 1,
+        1
       );
-    } else if (currentView === "day") {
-      setCurrentDate(
-        new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          currentDate.getDate() - 1
-        )
-      );
+      setCurrentDate(previousMonthDate);
     }
   };
 
   const next = () => {
-    if (currentView === "month") {
-      setCurrentDate(
-        new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    if (currentView === "day") {
+      // Go to the next day
+      const nextDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
+      nextDate.setDate(nextDate.getDate() + 1); // Add one day
+      setCurrentDate(nextDate);
+    } else if (currentView === "month") {
+      // Go to the next month (first day of the month)
+      const nextMonthDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        1
       );
-    } else if (currentView === "day") {
-      setCurrentDate(
-        new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          currentDate.getDate() + 1
-        )
-      );
+      setCurrentDate(nextMonthDate);
     }
   };
 
@@ -305,7 +390,12 @@ export default function Component() {
             }`}
           onClick={() => {
             if (!isWeekend) {
+              // setCurrentDate(date);
               setSelectedDate(date);
+              console.log("actual clicked date:", date);
+              console.log("Selected date:", selectedDate);
+              // this line below is causing the current date to be set to be one the selected date
+              // console.log("Selected date:", currentDate);
             }
           }}
         >
@@ -497,33 +587,80 @@ export default function Component() {
   };
 
   const renderWeekView = () => {
+    const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"];
     const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const dayOfWeek = currentDate.getDay();
+    const [weekData, setWeekData] = useState<
+      {
+        wfhCountAM: number;
+        inOfficeCountAM: number;
+        wfhCountPM: number;
+        inOfficeCountPM: number;
+      }[]
+    >([]);
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const [loading, setLoading] = useState<boolean>(true); // Add loading state
+    startOfWeek.setDate(currentDate.getDate() - daysToMonday);
+
+    useEffect(() => {
+      const fetchWeekData = async () => {
+        let data = [];
+        for (let i = 0; i < 5; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - date.getDay() + 1 + i); // Get Mon-Fri dates
+          const dayData = await fetchEmployeesUnderManagerForDay(date);
+          data.push(dayData);
+        }
+        setWeekData(data);
+        setLoading(false);
+      };
+      fetchWeekData(); // Call the function inside useEffect
+    }, []); // Empty array ensures this runs only once
+
+    if (loading) {
+      return <div>Loading...</div>; // Render loading indicator
+    }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        {Array.from({ length: 7 }, (_, i) => {
-          const date = new Date(startOfWeek);
-          date.setDate(startOfWeek.getDate() + i);
-          
-          const dayEmployees = employees.filter((e) => {
-            return true;
-          });
-
-          const wfhCount = dayEmployees.filter(employee => employee.status === 'WFH').length;
-          const inOfficeCount = dayEmployees.filter(employee => employee.status === 'In Office').length;
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {weekData.map((dayCount, i) => {
+          // Create a new date for each day of the week
+          const currentDate = new Date(startOfWeek);
+          currentDate.setDate(startOfWeek.getDate() + i); // Adjust to the correct day of the week
 
           return (
             <Card key={i}>
-              <CardContent>    
+              <CardContent>
+                {/* Show day of the week and the date */}
                 <h3 className="font-bold mb-2">{daysOfWeek[i]}</h3>
-                <p className="text-sm mb-2">{date.toLocaleDateString()}</p>
-                {dayEmployees.map((employee) => (
-                  <div key={employee.id} className="mb-2">
-                    <p>{employee.name}</p>
-                    <Badge>{employee.status}</Badge>
-                  </div>
-                ))}
+                <p className="text-sm mb-2">
+                  {currentDate.toLocaleDateString()}{" "}
+                  {/* Use the new currentDate */}
+                </p>
+
+                {/* WFH and In Office counts */}
+                <div className="mt-4 mb-2">
+                  <h4 className="font-bold">AM</h4>
+                </div>
+                <div className="flex justify-between">
+                  <p>
+                    WFH: <strong>{dayCount?.wfhCountAM}</strong>
+                  </p>
+                  <p>
+                    In Office: <strong>{dayCount?.inOfficeCountAM}</strong>
+                  </p>
+                </div>
+                <div className="mt-4 mb-2">
+                  <h4 className="font-bold">PM</h4>
+                </div>
+                <div className="flex justify-between">
+                  <p>
+                    WFH: <strong>{dayCount?.wfhCountPM}</strong>
+                  </p>
+                  <p>
+                    In Office: <strong>{dayCount?.inOfficeCountPM}</strong>
+                  </p>
+                </div>
               </CardContent>
             </Card>
           );
@@ -558,9 +695,12 @@ export default function Component() {
                 <TabsTrigger value="month">Month</TabsTrigger>
               </TabsList>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                <Button variant="outline" size="icon" onClick={prev}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
+                {currentView !== "week" && (
+                  <Button variant="outline" size="icon" onClick={prev}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                )}
+
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
                     ? `${currentDate.getDate()} ${
@@ -570,9 +710,11 @@ export default function Component() {
                         months[currentDate.getMonth()]
                       } ${currentDate.getFullYear()}`}{" "}
                 </h2>
-                <Button variant="outline" size="icon" onClick={next}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                {currentView !== "week" && (
+                  <Button variant="outline" size="icon" onClick={next}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               <Select
                 value={currentDate.getMonth().toString()}
