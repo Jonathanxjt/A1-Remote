@@ -51,7 +51,6 @@ export default function Component() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
-  const [scheduleDate, setScheduleDate] = useState(new Date());
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
@@ -137,7 +136,6 @@ export default function Component() {
                   s.request_type === "Full Day" && s.status === "Approved"
               );
 
-              // Parse the schedule to determine AM/PM/Full-day shifts
               if (hasAM) {
                 employeeData.status = "AM";
                 employeesAMList.push(employeeData);
@@ -148,7 +146,7 @@ export default function Component() {
                 employeeData.status = "PM";
                 employeesPMList.push(employeeData);
                 employeeData.status = "In Office";
-                employeesAMList.push(employeeData);
+                employeesAMList.push(employeeData); 
               }
               if (isFullDay) {
                 employeeData.status = "Full";
@@ -190,12 +188,10 @@ export default function Component() {
 
   const prev = () => {
     if (currentView === "month") {
-      // If in month view, go to the next month
       setCurrentDate(
         new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
       );
     } else if (currentView === "day") {
-      // If in day view, go to the next day
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -208,12 +204,10 @@ export default function Component() {
 
   const next = () => {
     if (currentView === "month") {
-      // If in month view, go to the next month
       setCurrentDate(
         new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
       );
     } else if (currentView === "day") {
-      // If in day view, go to the next day
       setCurrentDate(
         new Date(
           currentDate.getFullYear(),
@@ -355,7 +349,6 @@ export default function Component() {
     const [searchTermAM, setSearchTermAM] = useState("");
     const [searchTermPM, setSearchTermPM] = useState("");
 
-
     const filteredEmployeesAM = employeesAM.filter((employee) =>
       employee.fullName.toLowerCase().includes(searchTermAM.toLowerCase())
     );
@@ -453,10 +446,10 @@ export default function Component() {
               onChange={(e) => setSearchTermPM(e.target.value)}
             />
             {/* PM WFH  */}
-              <div className="flex space-x-4 mt-2">
-                <div className="w-1/2">
-                  <h6 className="font-semibold">Working From Home:</h6>
-                  <ul className="list-disc pl-5">
+            <div className="flex space-x-4 mt-2">
+              <div className="w-1/2">
+                <h6 className="font-semibold">Working From Home:</h6>
+                <ul className="list-disc pl-5">
                   {filteredEmployeesPM
                     .filter(
                       (employee) =>
@@ -471,10 +464,10 @@ export default function Component() {
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
                 </ul>
-                </div>
-                <div className="w-1/2">
-                  <h6 className="font-semibold">In Office:</h6>
-                  <ul className="list-disc pl-5">
+              </div>
+              <div className="w-1/2">
+                <h6 className="font-semibold">In Office:</h6>
+                <ul className="list-disc pl-5">
                   {filteredEmployeesPM
                     .filter((employee) => employee.status === "In Office")
                     .sort((a, b) =>
@@ -486,8 +479,8 @@ export default function Component() {
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
                 </ul>
-                </div>
               </div>
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
@@ -504,13 +497,17 @@ export default function Component() {
         {Array.from({ length: 7 }, (_, i) => {
           const date = new Date(startOfWeek);
           date.setDate(startOfWeek.getDate() + i);
+          
           const dayEmployees = employees.filter((e) => {
             return true;
           });
 
+          const wfhCount = dayEmployees.filter(employee => employee.status === 'WFH').length;
+          const inOfficeCount = dayEmployees.filter(employee => employee.status === 'In Office').length;
+
           return (
             <Card key={i}>
-              <CardContent>
+              <CardContent>    
                 <h3 className="font-bold mb-2">{daysOfWeek[i]}</h3>
                 <p className="text-sm mb-2">{date.toLocaleDateString()}</p>
                 {dayEmployees.map((employee) => (
@@ -560,11 +557,10 @@ export default function Component() {
                   {currentView === "day"
                     ? `${currentDate.getDate()} ${
                         months[currentDate.getMonth()]
-                      }` 
+                      }`
                     : `${
                         months[currentDate.getMonth()]
                       } ${currentDate.getFullYear()}`}{" "}
-                
                 </h2>
                 <Button variant="outline" size="icon" onClick={next}>
                   <ChevronRight className="h-4 w-4" />
