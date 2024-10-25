@@ -9,7 +9,7 @@ import { Flip, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
 
-export default function LoginPage() {
+export default function LoginPage({ onLogin }) { // <-- Accept onLogin prop
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState({ email: "", password: "" });
@@ -20,7 +20,6 @@ export default function LoginPage() {
     if (userData) {
       try {
         const user = JSON.parse(userData); // Parse the user data from JSON format
-        console.log(user);
         if (user) {
           navigate("/");
         }
@@ -83,6 +82,9 @@ export default function LoginPage() {
             theme: "dark",
             transition: Flip,
           });
+
+          // Call the onLogin function to update App's state
+          onLogin(staffId);
 
           setTimeout(() => {
             navigate("/");

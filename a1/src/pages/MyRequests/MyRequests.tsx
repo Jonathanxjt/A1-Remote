@@ -28,7 +28,7 @@ export default function MyRequests() {
     {}
   );
   const [dateRange, setDateRange] = useState({ from: null, to: null });
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
@@ -292,6 +292,7 @@ export default function MyRequests() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Approved">Approved</SelectItem>
               <SelectItem value="Withdrawn">Withdrawn</SelectItem>
               <SelectItem value="Rejected">Rejected</SelectItem>
