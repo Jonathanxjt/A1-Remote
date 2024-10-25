@@ -802,13 +802,13 @@ export default function Component() {
           </Tabs>
         </Card>
       </main>
-      {selectedDate && (
+      {/* {selectedDate && (
         <footer className="bg-white shadow-sm py-2 sm:py-4 px-4 sm: px-6 mt-4">
           <p className="text-base sm:text-lg font-semibold">
             Selected Date: {selectedDate.toDateString()}
           </p>
         </footer>
-      )}
+      )} */}
     </div>
   );
 }

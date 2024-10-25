@@ -67,7 +67,6 @@ export default function Component() {
       await fetchEmployeesInDepartmentDayView(); // Wait for the fetch to complete
       setDayLoading(false); // Set loading state to false after fetch completes
     };
-
     fetchData();
   }, [selectedDepartment, currentDate]);
 
@@ -637,6 +636,7 @@ export default function Component() {
 
     useEffect(() => {
       const fetchWeekData = async () => {
+        setLoading(true);
         let data = [];
         for (let i = 0; i < 5; i++) {
           const date = new Date();
@@ -648,7 +648,7 @@ export default function Component() {
         setLoading(false);
       };
       fetchWeekData(); // Call the function inside useEffect
-    }, []); // Empty array ensures this runs only once
+    }, [selectedDepartment]); // Empty array ensures this runs only once
 
     if (loading) {
       return <div>Loading...</div>; // Render loading indicator
@@ -844,13 +844,13 @@ export default function Component() {
           </Tabs>
         </Card>
       </main>
-      {selectedDate && (
+      {/* {selectedDate && (
         <footer className="bg-white shadow-sm py-2 sm:py-4 px-4 sm: px-6 mt-4">
           <p className="text-base sm:text-lg font-semibold">
             Selected Date: {selectedDate.toDateString()}
           </p>
         </footer>
-      )}
+      )} */}
     </div>
   );
 }
