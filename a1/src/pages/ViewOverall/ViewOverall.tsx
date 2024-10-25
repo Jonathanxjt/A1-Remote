@@ -56,7 +56,6 @@ export default function Component() {
   const [user, setUser] = useState(() => {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
   });
-  
 
   useEffect(() => {
     console.log(user);
@@ -68,10 +67,9 @@ export default function Component() {
       await fetchEmployeesInDepartmentDayView(); // Wait for the fetch to complete
       setDayLoading(false); // Set loading state to false after fetch completes
     };
-  
+
     fetchData();
   }, [selectedDepartment, currentDate]);
-  
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
@@ -79,10 +77,12 @@ export default function Component() {
 
   const fetchEmployeesUnderManagerWeekView = async (date: Date) => {
     try {
-      const reportingManagerId = user.reporting_manager;
-      const response = await axios.get(
-        `http://localhost:5004/schedule/team/${reportingManagerId}`
-      );
+        const endpoint =
+        selectedDepartment === "All"
+          ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
+          : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
+      console.log("Endpoint:", endpoint);
+      const response = await axios.get(endpoint);
 
       if (response.data.code === 200) {
         let wfhCountAM = 0;
@@ -161,10 +161,11 @@ export default function Component() {
 
   const fetchEmployeesInDepartmentDayView = async () => {
     try {
-    const endpoint = selectedDepartment === "All"
-        ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
-        : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
-        console.log("Endpoint:", endpoint);
+      const endpoint =
+        selectedDepartment === "All"
+          ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
+          : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
+      console.log("Endpoint:", endpoint);
       const response = await axios.get(endpoint);
 
       if (response.data.code === 200) {
@@ -188,12 +189,8 @@ export default function Component() {
             employeesPMList.push(employeeData);
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              const scheduleDate = new Date(s.date)
-                .toISOString()
-                .split("T")[0];
-              const currentDateString = currentDate
-                .toISOString()
-                .split("T")[0];
+              const scheduleDate = new Date(s.date).toISOString().split("T")[0];
+              const currentDateString = currentDate.toISOString().split("T")[0];
               // console.log("Schedule date:", scheduleDate);
               console.log("Current date:", currentDateString);
               return scheduleDate === currentDateString;
@@ -486,16 +483,10 @@ export default function Component() {
     const filteredEmployeesPM = employeesPM.filter((employee) =>
       employee.fullName.toLowerCase().includes(searchTermPM.toLowerCase())
     );
-    
-    // // if current date is a wekend, display a message
-    // const dayOfWeek = currentDate.getDay();
-    // if (dayOfWeek === 0 || dayOfWeek === 6) {
-    //   return <div>Its a weekend!</div>;
-    // }
 
     if (dayLoading) {
-        return <div>Loading...</div>; // Render loading indicator
-      }
+      return <div>Loading...</div>; // Render loading indicator
+    }
 
     return (
       <>
@@ -671,37 +662,62 @@ export default function Component() {
           currentDate.setDate(startOfWeek.getDate() + i); // Adjust to the correct day of the week
 
           return (
-            <Card key={i}>
-              <CardContent>
+            <Card key={i} className="p-0">
+              <CardContent className="p-3">
                 {/* Show day of the week and the date */}
-                <h3 className="font-bold mb-2">{daysOfWeek[i]}</h3>
+                <h3 className="font-bold text-xl mb-2">{daysOfWeek[i]}</h3>
                 <p className="text-sm mb-2">
                   {currentDate.toLocaleDateString()}{" "}
                   {/* Use the new currentDate */}
                 </p>
 
                 {/* WFH and In Office counts */}
-                <div className="mt-4 mb-2">
-                  <h4 className="font-bold">AM</h4>
+                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
+                  {" "}
+                  {/* Light green background */}
+                  <h4 className="font-bold">AM:</h4>
+                  <div className="flex justify-around items-center w-full pt-2">
+                    {" "}
+                    {/* Grey line */}
+                    <div className="flex-1 border-r border-gray-300 pr-2">
+                      <p className="text-sm text-center text-gray-500">WFH:</p>
+                      <p className="text-xl text-center">
+                        {dayCount?.wfhCountAM}
+                      </p>
+                    </div>
+                    <div className="flex-1 pl-2">
+                      <p className="text-sm text-center text-gray-500">
+                        Office:
+                      </p>
+                      <p className="text-xl text-center">
+                        {dayCount?.inOfficeCountAM}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <p>
-                    WFH: <strong>{dayCount?.wfhCountAM}</strong>
-                  </p>
-                  <p>
-                    In Office: <strong>{dayCount?.inOfficeCountAM}</strong>
-                  </p>
-                </div>
-                <div className="mt-4 mb-2">
-                  <h4 className="font-bold">PM</h4>
-                </div>
-                <div className="flex justify-between">
-                  <p>
-                    WFH: <strong>{dayCount?.wfhCountPM}</strong>
-                  </p>
-                  <p>
-                    In Office: <strong>{dayCount?.inOfficeCountPM}</strong>
-                  </p>
+
+                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
+                  {" "}
+                  {/* Light green background */}
+                  <h4 className="font-bold">PM:</h4>
+                  <div className="flex justify-around items-center w-full pt-2">
+                    {" "}
+                    {/* Grey line */}
+                    <div className="flex-1 border-r border-gray-300 pr-2">
+                      <p className="text-sm text-center text-gray-500">WFH:</p>
+                      <p className="text-xl text-center">
+                        {dayCount?.wfhCountPM}
+                      </p>
+                    </div>
+                    <div className="flex-1 pl-2">
+                      <p className="text-sm text-center text-gray-500">
+                        Office:
+                      </p>
+                      <p className="text-xl text-center">
+                        {dayCount?.inOfficeCountPM}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -725,31 +741,34 @@ export default function Component() {
       </header>
       <main className="p-4 sm:p-6">
         <Card className="w-full">
-        <div className="mt-4"> {/* Margin bottom for spacing */}
-  <div className="flex justify-center items-center"> {/* Flex container for inline alignment */}
-    <label
-      htmlFor="department-select"
-      className="block text-xl font-medium mr-2 text-gray-700" // Add margin to the right for spacing
-    >
-      Department:
-    </label>
-    <select
-      id="department-select"
-      value={selectedDepartment}
-      onChange={(e) => setSelectedDepartment(e.target.value)}
-      className="block text-md w-1/4 pl-2 pr-2 py-2 text-base bg-gray-100 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md" // Set width to 50%
-    >
-      <option value="All">All</option>
-      <option value="Consultancy">Consultancy</option>
-      <option value="Engineering">Engineering</option>
-      <option value="HR">Human Resource</option>
-      <option value="IT">IT</option>
-      <option value="Sales">Sales</option>
-      <option value="Solutioning">Solutioning</option>
-    </select>
-  </div>
-</div>
-
+          <div className="mt-4">
+            {" "}
+            {/* Margin bottom for spacing */}
+            <div className="flex justify-center items-center">
+              {" "}
+              {/* Flex container for inline alignment */}
+              <label
+                htmlFor="department-select"
+                className="block text-xl font-medium mr-2 text-gray-700" // Add margin to the right for spacing
+              >
+                Department:
+              </label>
+              <select
+                id="department-select"
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="block text-md w-1/4 pl-2 pr-2 py-2 text-base bg-gray-100 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md" // Set width to 50%
+              >
+                <option value="All">All</option>
+                <option value="Consultancy">Consultancy</option>
+                <option value="Engineering">Engineering</option>
+                <option value="HR">Human Resource</option>
+                <option value="IT">IT</option>
+                <option value="Sales">Sales</option>
+                <option value="Solutioning">Solutioning</option>
+              </select>
+            </div>
+          </div>
 
           <Tabs
             value={currentView}

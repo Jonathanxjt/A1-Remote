@@ -51,6 +51,7 @@ export default function Component() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
+  const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
   const [user, setUser] = useState(() => {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
   });
@@ -59,8 +60,99 @@ export default function Component() {
     console.log(user);
   }, [user]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setDayLoading(true);
+      await fetchEmployeesUnderManager(); // Wait for the fetch to complete
+      setDayLoading(false); // Set loading state to false after fetch completes
+    };
+  
+    fetchData();
+  }, [currentDate]);
+
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
+  };
+
+  const fetchEmployeesUnderManager = async () => {
+    try {
+      const reportingManagerId = user.reporting_manager;
+      const response = await axios.get(
+        `http://localhost:5004/schedule/team/${reportingManagerId}`
+      );
+
+      if (response.data.code === 200) {
+        const employeesAMList: Employee[] = [];
+        const employeesPMList: Employee[] = [];
+
+        response.data.data.forEach((item: any) => {
+          const employee = item.employee;
+          const schedule = item.schedule;
+
+          const employeeData: Employee = {
+            id: employee.staff_id,
+            fullName: `${employee.staff_fname} ${employee.staff_lname}`,
+            status: "In Office",
+            email: employee.email,
+            position: employee.position,
+          };
+
+          if (!schedule || schedule === "No schedule found.") {
+            employeesAMList.push(employeeData);
+            employeesPMList.push(employeeData);
+          } else {
+            const todaySchedule = schedule.filter((s: any) => {
+              const scheduleDate = new Date(s.date)
+                .toISOString()
+                .split("T")[0];
+              const currentDateString = currentDate
+                .toISOString()
+                .split("T")[0];
+              // console.log("Schedule date:", scheduleDate);
+              console.log("Current date:", currentDateString);
+              return scheduleDate === currentDateString;
+            });
+
+            const hasAM = todaySchedule.some(
+              (s: any) => s.request_type === "AM" && s.status === "Approved"
+            );
+            const hasPM = todaySchedule.some(
+              (s: any) => s.request_type === "PM" && s.status === "Approved"
+            );
+            const isFullDay = todaySchedule.some(
+              (s: any) =>
+                s.request_type === "Full Day" && s.status === "Approved"
+            );
+
+            if (hasAM) {
+              employeeData.status = "AM";
+              employeesAMList.push(employeeData);
+              employeeData.status = "In Office";
+              employeesPMList.push(employeeData);
+            }
+            if (hasPM) {
+              employeeData.status = "PM";
+              employeesPMList.push(employeeData);
+              employeeData.status = "In Office";
+              employeesAMList.push(employeeData);
+            }
+            if (isFullDay) {
+              employeeData.status = "Full";
+              employeesAMList.push(employeeData);
+              employeesPMList.push(employeeData);
+            }
+            if (!hasAM && !hasPM && !isFullDay) {
+              employeesAMList.push(employeeData);
+              employeesPMList.push(employeeData);
+            }
+          }
+        });
+        setEmployeesAM(employeesAMList);
+        setEmployeesPM(employeesPMList);
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
   };
 
   const fetchEmployeesUnderManagerForDay = async (date: Date) => {
@@ -175,91 +267,7 @@ export default function Component() {
         console.error("Error fetching work requests:", error);
       }
     };
-
     fetchWorkRequests();
-
-    const fetchEmployeesUnderManager = async () => {
-      try {
-        const reportingManagerId = user.reporting_manager;
-        const response = await axios.get(
-          `http://localhost:5004/schedule/team/${reportingManagerId}`
-        );
-
-        if (response.data.code === 200) {
-          const employeesAMList: Employee[] = [];
-          const employeesPMList: Employee[] = [];
-
-          response.data.data.forEach((item: any) => {
-            const employee = item.employee;
-            const schedule = item.schedule;
-
-            const employeeData: Employee = {
-              id: employee.staff_id,
-              fullName: `${employee.staff_fname} ${employee.staff_lname}`,
-              status: "In Office",
-              email: employee.email,
-              position: employee.position,
-            };
-
-            if (!schedule || schedule === "No schedule found.") {
-              employeesAMList.push(employeeData);
-              employeesPMList.push(employeeData);
-            } else {
-              const todaySchedule = schedule.filter((s: any) => {
-                const scheduleDate = new Date(s.date)
-                  .toISOString()
-                  .split("T")[0];
-                const currentDateString = currentDate
-                  .toISOString()
-                  .split("T")[0];
-                // console.log("Schedule date:", scheduleDate);
-                console.log("Current date:", currentDateString);
-                return scheduleDate === currentDateString;
-              });
-
-              const hasAM = todaySchedule.some(
-                (s: any) => s.request_type === "AM" && s.status === "Approved"
-              );
-              const hasPM = todaySchedule.some(
-                (s: any) => s.request_type === "PM" && s.status === "Approved"
-              );
-              const isFullDay = todaySchedule.some(
-                (s: any) =>
-                  s.request_type === "Full Day" && s.status === "Approved"
-              );
-
-              if (hasAM) {
-                employeeData.status = "AM";
-                employeesAMList.push(employeeData);
-                employeeData.status = "In Office";
-                employeesPMList.push(employeeData);
-              }
-              if (hasPM) {
-                employeeData.status = "PM";
-                employeesPMList.push(employeeData);
-                employeeData.status = "In Office";
-                employeesAMList.push(employeeData);
-              }
-              if (isFullDay) {
-                employeeData.status = "Full";
-                employeesAMList.push(employeeData);
-                employeesPMList.push(employeeData);
-              }
-              if (!hasAM && !hasPM && !isFullDay) {
-                employeesAMList.push(employeeData);
-                employeesPMList.push(employeeData);
-              }
-            }
-          });
-          setEmployeesAM(employeesAMList);
-          setEmployeesPM(employeesPMList);
-        }
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      }
-    };
-    fetchEmployeesUnderManager();
-
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
@@ -477,11 +485,9 @@ export default function Component() {
       employee.fullName.toLowerCase().includes(searchTermPM.toLowerCase())
     );
 
-    // // if current date is a wekend, display a message
-    // const dayOfWeek = currentDate.getDay();
-    // if (dayOfWeek === 0 || dayOfWeek === 6) {
-    //   return <div>Its a weekend!</div>;
-    // }
+    if (dayLoading) {
+      return <div>Loading...</div>; // Render loading indicator
+    }
 
     return (
       <>
@@ -673,11 +679,11 @@ export default function Component() {
                     {" "}
                     {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-gray-500">WFH:</p>
+                      <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">{dayCount?.wfhCountAM}</p>
                     </div>
                     <div className="flex-1 pl-2">
-                      <p className="text-sm text-gray-500">Office:</p>
+                      <p className="text-sm text-center text-gray-500">Office:</p>
                       <p className="text-xl text-center">{dayCount?.inOfficeCountAM}</p>
                     </div>
                   </div>
@@ -691,11 +697,11 @@ export default function Component() {
                     {" "}
                     {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-gray-500">WFH:</p>
+                      <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">{dayCount?.wfhCountPM}</p>
                     </div>
                     <div className="flex-1 pl-2">
-                      <p className="text-sm text-gray-500">Office:</p>
+                      <p className="text-sm text-center text-gray-500">Office:</p>
                       <p className="text-xl text-center">{dayCount?.inOfficeCountPM}</p>
                     </div>
                   </div>
