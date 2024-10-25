@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import Footer from "./components/footer.tsx";
@@ -12,6 +12,9 @@ import RequestPage from "./pages/RequestPage/RequestPage.tsx";
 import ManageRequests from "./pages/ManageRequests/ManageRequests.tsx";
 import MyRequests from "./pages/MyRequests/MyRequests";
 import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
+import NotificationPolling from "./components/NotificationPolling.js";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const App: React.FC = () => {
   const [emails, setEmails] = useState([
@@ -45,31 +48,42 @@ const App: React.FC = () => {
     (email) => email.status === "unread"
   ).length;
 
+  const [staffId, setStaffId] = useState(null);
+
+  useEffect(() => {
+    // Fetch staff ID from session storage when the app loads
+    const id = sessionStorage.getItem("staff_id");
+    if (id) {
+      setStaffId(id); // Set staff ID if available
+    }
+  }, []);
+
   return (
     <div className="maincontainer">
-      {" "}
       {/* ensures that the sidebar does not cover the main-content */}
       <Sidebar unreadCount={unreadEmailsCount} />
       <div className="main-content">
+        {/* Always render NotificationPolling and ToastContainer */}
+        {staffId && <NotificationPolling staffId={staffId} />}
+        <ToastContainer />
+        
+        {/* Routes for different pages */}
         <Routes>
           <Route path="/" element={<Home />} /> {/* Default route */}
           <Route path="/login" element={<Login />} /> {/* Login route */}
-          <Route path="/ViewOverall" element={<ViewOverall />} />{" "}
-          {/*viewoverall route */}
-          <Route path="/MakeRequest" element={<RequestPage />} />{" "}
-          {/*requestPage route */}
-          <Route path="/MySchedule" element={<MySchedule />} />{" "}
-          {/*myschedule route */}
-          <Route path="/ManageRequests" element={<ManageRequests />} />{" "}
-          {/*viewrequests route */}
-          <Route path="/MyRequests" element={<MyRequests />} />{" "}
-          {/*myrequests route */}
+          <Route path="/MakeRequest" element={<RequestPage />} /> {/* RequestPage route */}
+          <Route path="/Dashboard" element={<ViewOverall />} /> {/* Overall route */}
+          <Route path="/MySchedule" element={<MySchedule />} /> {/* MySchedule route */}
+          <Route path="/ManageRequests" element={<ManageRequests />} /> {/* ManageRequests route */}
+          <Route path="/MyRequests" element={<MyRequests />} /> {/* MyRequests route */}
           <Route
             path="/Mailbox"
             element={<Mailbox emails={emails} setEmails={setEmails} />}
           />
           <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
+        
+        {/* Footer for the app */}
         <Footer />
       </div>
     </div>

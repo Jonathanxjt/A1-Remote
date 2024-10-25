@@ -1,44 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import axios from "axios";
-import {
-  addDays,
-  format,
-  isAfter,
-  isSaturday,
-  isSunday,
-  startOfDay,
-} from "date-fns";
+import { addDays, format, isAfter, isSaturday, isSunday, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Flip, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
-
 
 export default function WorkFromHomeForm() {
-  
   const navigate = useNavigate();
   // React Hook Form for handling form state and validation
   const form = useForm({
@@ -76,7 +51,7 @@ export default function WorkFromHomeForm() {
       staff_id, // Fetch staff_id from sessionStorage
       request_type: data.timePeriod,
       // Format the date as a local date before submitting
-      request_date: data.date ? format(data.date, "yyyy-MM-dd") : undefined, 
+      request_date: data.date ? format(data.date, "yyyy-MM-dd") : undefined,
       reason: data.reasons,
     };
 
@@ -98,12 +73,10 @@ export default function WorkFromHomeForm() {
           progress: undefined,
           theme: "dark",
           transition: Flip,
-          
         });
         setTimeout(() => {
           navigate("/MyRequests");
         }, 2500);
-
       }
     } catch (error: any) {
       // Extract error message from Axios response
