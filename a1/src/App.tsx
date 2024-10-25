@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Footer from "./components/footer.tsx";
+import NotificationPolling from "./components/NotificationPolling.js";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";
 import Login from "./pages/Login/Login";
 import Mailbox from "./pages/Mailbox/Mailbox.tsx";
+import ManageRequests from "./pages/ManageRequests/ManageRequests.tsx";
+import MyRequests from "./pages/MyRequests/MyRequests";
 import MySchedule from "./pages/MySchedule/MySchedule";
 import NotFound from "./pages/NotFound";
 import RequestPage from "./pages/RequestPage/RequestPage.tsx";
-import ManageRequests from "./pages/ManageRequests/ManageRequests.tsx";
-import MyRequests from "./pages/MyRequests/MyRequests";
 import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
-import NotificationPolling from "./components/NotificationPolling.js";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const App: React.FC = () => {
   const [emails, setEmails] = useState([
@@ -66,23 +66,23 @@ const App: React.FC = () => {
         {/* Always render NotificationPolling and ToastContainer */}
         {staffId && <NotificationPolling staffId={staffId} />}
         <ToastContainer />
-        
+
         {/* Routes for different pages */}
         <Routes>
           <Route path="/" element={<Home />} /> {/* Default route */}
           <Route path="/login" element={<Login />} /> {/* Login route */}
-          <Route path="/MakeRequest" element={<RequestPage />} /> {/* RequestPage route */}
-          <Route path="/Dashboard" element={<ViewOverall />} /> {/* Overall route */}
-          <Route path="/MySchedule" element={<MySchedule />} /> {/* MySchedule route */}
-          <Route path="/ManageRequests" element={<ManageRequests />} /> {/* ManageRequests route */}
-          <Route path="/MyRequests" element={<MyRequests />} /> {/* MyRequests route */}
+          <Route path="/MakeRequest" element={<RequestPage />} />{" "}{/* RequestPage route */}
+          <Route path="/ViewOverall" element={<ViewOverall />} />{" "}{/* Overall route */}
+          <Route path="/MySchedule" element={<MySchedule />} />{" "}{/* MySchedule route */}
+          <Route path="/ManageRequests" element={<ManageRequests />} />{" "}{/* ManageRequests route */}
+          <Route path="/MyRequests" element={<MyRequests />} />{" "}{/* MyRequests route */}
           <Route
             path="/Mailbox"
             element={<Mailbox emails={emails} setEmails={setEmails} />}
           />
           <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
-        
+
         {/* Footer for the app */}
         <Footer />
       </div>
