@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import RequestPage from "./pages/RequestPage/RequestPage.tsx";
 import ManageRequests from "./pages/ManageRequests/ManageRequests.tsx";
 import MyRequests from "./pages/MyRequests/MyRequests";
+import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
 
 const App: React.FC = () => {
   const [emails, setEmails] = useState([
@@ -53,6 +54,8 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} /> {/* Default route */}
           <Route path="/login" element={<Login />} /> {/* Login route */}
+          <Route path="/ViewOverall" element={<ViewOverall />} />{" "}
+          {/*viewoverall route */}
           <Route path="/MakeRequest" element={<RequestPage />} />{" "}
           {/*requestPage route */}
           <Route path="/MySchedule" element={<MySchedule />} />{" "}

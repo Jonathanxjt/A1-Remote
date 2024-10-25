@@ -80,6 +80,10 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
     navigate("/MakeRequest");
   };
 
+  const handleDashboardClick = () => {
+    navigate("/ViewOverall");
+  };
+
 
   const handleMyRequestsClick = () => {
     navigate("/MyRequests");
@@ -130,6 +134,8 @@ const Sidebar: React.FC<SidebarProps> = ({ unreadCount }) => {
             icon={<FileText size={24} />}
             label="Dashboard"
             collapsed={collapsed}
+            onClick={handleDashboardClick}
+
           />
           <NavItem
             icon={<FilePenLine size={24} />}

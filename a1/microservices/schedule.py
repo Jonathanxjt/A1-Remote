@@ -107,6 +107,84 @@ def create_app():
 
         except requests.exceptions.RequestException as e:
             return jsonify({"code": 500, "message": f"Error calling employee service: {str(e)}"}), 500
+        
+    @app.route("/schedule/dept/<string:dept>")
+    def get_dept_schedules(dept):
+        try:
+            employee_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee/{dept}/get_by_dept")
+            
+            if employee_response.status_code == 200:
+                team_members = employee_response.json().get("data").get("employee", [])
+                
+                if not team_members:
+                    return jsonify({"code": 404, "message": "No team members found."}), 404
+
+                schedules = []
+                for member in team_members:
+                    staff_id = member.get("staff_id")
+                    schedule_response = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
+                    
+                    if schedule_response:
+                        schedules.append({
+                            "employee": member,
+                            "schedule": [s.json() for s in schedule_response]
+                        })
+                    else:
+                        schedules.append({
+                            "employee": member,
+                            "schedule": "No schedule found."
+                        })
+                
+                return jsonify({
+                    "code": 200,
+                    "data": schedules
+                }), 200
+            
+            else:
+                return jsonify({"code": employee_response.status_code, "message": "Error fetching team members."}), employee_response.status_code
+
+        except requests.exceptions.RequestException as e:
+            return jsonify({"code": 500, "message": f"Error calling employee service: {str(e)}"}), 500
+            
+        
+    @app.route("/schedule/all")
+    def get_all_schedules():
+        try:
+            employee_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee")
+            
+            if employee_response.status_code == 200:
+                team_members = employee_response.json().get("data").get("employee_list", [])
+                
+                if not team_members:
+                    return jsonify({"code": 404, "message": "No team members found."}), 404
+
+                schedules = []
+                for member in team_members:
+                    staff_id = member.get("staff_id")
+                    schedule_response = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
+                    
+                    if schedule_response:
+                        schedules.append({
+                            "employee": member,
+                            "schedule": [s.json() for s in schedule_response]
+                        })
+                    else:
+                        schedules.append({
+                            "employee": member,
+                            "schedule": "No schedule found."
+                        })
+                
+                return jsonify({
+                    "code": 200,
+                    "data": schedules
+                }), 200
+            
+            else:
+                return jsonify({"code": employee_response.status_code, "message": "Error fetching team members."}), employee_response.status_code
+
+        except requests.exceptions.RequestException as e:
+            return jsonify({"code": 500, "message": f"Error calling employee service: {str(e)}"}), 500
+
 
 
     @app.route("/schedule/create_schedule", methods=["POST"])
