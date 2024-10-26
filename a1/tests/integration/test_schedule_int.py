@@ -14,10 +14,7 @@ from models import Employee, Schedule, WorkRequest, Audit, db
 @pytest.fixture
 def client():
     app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:' 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
     client = app.test_client()
 
     with app.app_context():
