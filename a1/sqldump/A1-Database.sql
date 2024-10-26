@@ -85,7 +85,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 # Change this path to the csv file path
 # C:/wamp64/tmp/employeenew.csv
-LOAD DATA LOCAL INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
+LOAD DATA INFILE '/Users/darren/Desktop/SQL Stuff/employeenew.csv'
 INTO TABLE Employee
 FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n' 
