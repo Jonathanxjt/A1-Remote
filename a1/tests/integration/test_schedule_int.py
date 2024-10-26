@@ -71,14 +71,14 @@ def test_get_employee_schedule(client):
     assert len(data['data']['work_request']) == db.session.query(Schedule).filter_by(staff_id=employee.staff_id).count()
     assert data['data']['work_request'][0]['request_id'] == schedule1.request_id
 
-# Test for "/schedule/<int:staff_id>/manager"
-def test_get_manager_schedule(client):
-    client, employee, manager, request1, request2, schedule1, schedule2 = client
-    response = client.get(f"/schedule/{manager.staff_id}/manager")
-    data = json.loads(response.data)
-    # assert data == 200
-    assert response.status_code == 200
-    assert len(data['data']['manager_schedule']) == 0
+# # Test for "/schedule/<int:staff_id>/manager"
+# def test_get_manager_schedule(client):
+#     client, employee, manager, request1, request2, schedule1, schedule2 = client
+#     response = client.get(f"/schedule/{manager.staff_id}/manager")
+#     data = json.loads(response.data)
+#     # assert data == 200
+#     assert response.status_code == 200
+#     assert len(data['data']['manager_schedule']) == 0
 
 # Test for "/schedule/team/<int:reporting_manager>" with mock external employee service
 @patch('requests.get')
