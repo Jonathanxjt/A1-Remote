@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flip, toast, ToastContainer } from "react-toastify";
+import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
 
@@ -128,7 +128,7 @@ export default function LoginPage({ onLogin }) { // <-- Accept onLogin prop
 
   return (
     <div className="login-page-container">
-      <ToastContainer />
+ 
 
       <Card className="login-card">
         <CardHeader className="login-card-header">

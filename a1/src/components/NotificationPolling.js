@@ -44,7 +44,6 @@ export default function NotificationPolling({ staffId, setNotifications }) {
 
           // If there are no notifications, reset the state
           if (newNotifications.length === 0) {
-            setNotifications_side([]);
             console.log("No notifications found.");
             setNotifications([]);
             currentNotificationsRef.current = [];
@@ -113,16 +112,31 @@ export default function NotificationPolling({ staffId, setNotifications }) {
   // Notify user of a new notification
   const notifyUser = (notification) => {
     console.log("Showing toast notification...");
-    toast.info(`${notification.message}`, {
-      position: "bottom-right",
-      autoClose: 3000,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: false,
-      draggable: true,
-      theme: "light",
-      transition: Bounce,
-    });
+    if(notification.sender_id != notification.receiver_id) {
+      toast.info(`${notification.sender_name} ${notification.message}`, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        theme: "light",
+        transition: Bounce,
+      });
+    }
+    else
+    {
+      toast.info(`System: ${notification.message}`, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        theme: "light",
+        transition: Bounce,
+      });
+    }
   };
 
   useEffect(() => {

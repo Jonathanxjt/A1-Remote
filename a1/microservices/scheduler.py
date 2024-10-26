@@ -42,6 +42,7 @@ def create_WkRq_Sch():
         request_type = data.get("request_type")
         request_date = data.get("request_date")
         reason = data.get("reason")
+        exceed = data.get('exceed', False)  # Default to False if not provided
 
         if not staff_id or not request_type or not request_date or not reason:
             return jsonify({"code": 400, "message": "Missing required fields"}), 400
@@ -99,7 +100,8 @@ def create_WkRq_Sch():
             "receiver_id": approval_manager_id,  # The manager who will approve the request
             "request_id": new_request_id,
             "request_type": request_type,
-            "status": "Pending"  # Initial status of the work request
+            "status": "Pending",  # Initial status of the work request
+            "exceed": exceed
         }
 
         notification_response = requests.post(f"{NOTIFICATION_SERVICE_URL}/create_notification", json=notification_data)

@@ -1,16 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { endOfMonth, endOfWeek, format, isSameDay, isWithinInterval, startOfMonth, startOfWeek } from "date-fns";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flip, toast, ToastContainer } from "react-toastify";
+import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function MyRequests() {
@@ -279,7 +279,6 @@ export default function MyRequests() {
 
   return (
     <div className="container mx-auto py-10">
-      <ToastContainer />
       <h1 className="text-2xl font-bold mb-5">My Requests</h1>
       <div className="flex space-x-4 mb-4">
         <div className="flex flex-col">

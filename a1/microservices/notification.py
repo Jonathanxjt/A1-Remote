@@ -52,6 +52,9 @@ def create_app():
             request_id = data['request_id']
             request_type = data['request_type']
             status = data['status']
+            
+            # Check if "exceed" field is provided in the request payload
+            exceed = data.get('exceed', False)  # Default to False if not provided
 
             # Status-to-message mapping for the original notification
             status_messages = {
@@ -73,6 +76,17 @@ def create_app():
             # Format the message for the original notification
             message = f"{status_messages[status].format(request_type=request_type)} {todays_date}"
 
+
+            if exceed:
+                special_message = " has exceeded 2 WFH requests for this week."
+                special_notification = Notification(
+                    sender_id=sender_id,
+                    receiver_id=receiver_id,
+                    request_id=request_id,
+                    message=special_message
+                )
+                db.session.add(special_notification)
+
             # Create the original notification
             new_notification = Notification(
                 sender_id=sender_id,
@@ -85,7 +99,6 @@ def create_app():
             add = False
             # Handle special case for 'Pending', 'Cancelled', and 'Withdrawn'
             if status in ["Pending", "Cancelled", "Withdrawn"]:
-
                 additional_message_template = {
                     "Pending": "Your WFH Request ({request_type}) has been submitted",
                     "Cancelled": "Your WFH Request ({request_type}) has been cancelled",
@@ -107,18 +120,17 @@ def create_app():
 
             db.session.commit()
 
-            # Checks if an additional notification was created.
+            # Prepare the response data
+            response_data = [new_notification.json()]
             if add:
-                return jsonify({
-                    "code": 201,
-                    "message": "Notification(s) created successfully",
-                    "data": [new_notification.json(), additional_notification.json()]
-                }), 201
-            
+                response_data.append(additional_notification.json())
+            if exceed:
+                response_data.append(special_notification.json())
+
             return jsonify({
                 "code": 201,
                 "message": "Notification(s) created successfully",
-                "data": new_notification.json()
+                "data": response_data
             }), 201
 
         except Exception as e:

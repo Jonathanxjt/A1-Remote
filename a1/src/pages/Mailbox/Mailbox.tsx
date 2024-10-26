@@ -8,7 +8,7 @@ import axios from "axios";
 import { endOfMonth, endOfWeek, format, isSameDay, isWithinInterval, startOfMonth, startOfWeek } from "date-fns";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Flip, toast, ToastContainer } from "react-toastify";
+import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function NotificationPage() {
@@ -212,7 +212,7 @@ export default function NotificationPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <ToastContainer />
+
       <h1 className="text-2xl font-bold mb-5">Notifications</h1>
 
       <div className="flex space-x-4 mb-4">
