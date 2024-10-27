@@ -5,7 +5,6 @@ from sqlalchemy import text
 from models import *
 from dotenv import load_dotenv
 import os
-import requests
 
 def create_app():
     app = Flask(__name__)
