@@ -126,7 +126,3 @@ def test_get_team_members(client):
     assert len(data['data']['members']) == len(expected_team_members)
     for i, member in enumerate(expected_team_members):
         assert data['data']['members'][i]['staff_id'] == member.staff_id
-
-
-
-
