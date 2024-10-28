@@ -8,15 +8,9 @@ import os
 
 def create_app():
     app = Flask(__name__)
-
-    # Always set the TESTING config in the testing environment
-    if os.getenv("TESTING"):
-        app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///:memory:'
-        
-    else:
-        load_dotenv()
-        if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-            app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    load_dotenv()
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
