@@ -75,9 +75,26 @@ def create_app():
             # Format the message for the original notification
             message = f"{status_messages[status].format(request_type=request_type)} {todays_date}"
 
+            # Create the original notification
+            # Fetch sender's name
+            sender = db.session.query(Employee).filter_by(staff_id=sender_id).first()
+            sender_name = f"{sender.staff_fname} {sender.staff_lname}" if sender else "N/A"
+
+            # Include sender's name in the message
+            message_with_sender = f"{sender_name}: {message}"
+
+            new_notification = Notification(
+                sender_id=sender_id,
+                receiver_id=receiver_id,
+                request_id=request_id,
+                message=message_with_sender
+            )
+            db.session.add(new_notification)
+
+            
 
             if exceed:
-                special_message = " has exceeded 2 WFH requests for this week."
+                special_message = f"{sender_name} has exceeded 2 WFH requests for this week."
                 special_notification = Notification(
                     sender_id=sender_id,
                     receiver_id=receiver_id,
@@ -86,14 +103,6 @@ def create_app():
                 )
                 db.session.add(special_notification)
 
-            # Create the original notification
-            new_notification = Notification(
-                sender_id=sender_id,
-                receiver_id=receiver_id,
-                request_id=request_id,
-                message=message
-            )
-            db.session.add(new_notification)
 
             add = False
             # Handle special case for 'Pending', 'Cancelled', and 'Withdrawn'
@@ -135,58 +144,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()  # Rollback the transaction if any error occurs
             return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
-
-
-
-    # @app.route("/notification/create_notification", methods=['POST'])
-    # def create_notification():
-    #     try:
-    #         # Extract data from the request JSON payload
-    #         data = request.json
-    #         sender_id = data.get('sender_id')
-    #         receiver_id = data.get('receiver_id')
-    #         request_id = data.get('request_id')
-    #         request_type = data.get('request_type')
-    #         status = data.get('status')
-
-    #         if not sender_id or not receiver_id or not request_id or not request_type or not status:
-    #             return jsonify({"code": 400, "message": "Missing required fields"}), 400
-
-    #         todays_date = datetime.now().strftime('%Y-%m-%d')
-    #         if status == "Pending":
-    #             message = f"WFH Request on {todays_date} ({request_type})"
-    #         elif status == "Approved":
-    #             message = f"WFH Request Approved on {todays_date} ({request_type})"
-    #         elif status == "Rejected":
-    #             message = f"WFH Request Rejected on {todays_date} ({request_type})"
-    #         elif status == "Cancelled":
-    #             message = f"WFH Request Cancelled on {todays_date} ({request_type})"
-    #         elif status == "Withdrawn":
-    #             message = f"WFH Request Withdrawn on {todays_date} ({request_type})"
-    #         elif status == "Revoked":
-    #             message = f"WFH Request Revoked on {todays_date} ({request_type})"
-    #         else:
-    #             return jsonify({"code": 400, "message": "Invalid status provided"}), 400
-
-    #         new_notification = Notification(
-    #             sender_id=sender_id,
-    #             receiver_id=receiver_id,
-    #             request_id=request_id,
-    #             message=message
-    #         )
-
-    #         db.session.add(new_notification)
-    #         db.session.commit()
-
-    #         return jsonify({
-    #             "code": 201,
-    #             "message": "Notification created successfully",
-    #             "data": new_notification.json()
-    #         }), 201
-
-    #     except Exception as e:
-    #         db.session.rollback()  # Rollback if there's an error
-    #         return jsonify({"code": 500, "message": f"An error occurred: {str(e)}"}), 500
     
     @app.route("/notification/read_notification/<int:notification_id>", methods=['PUT'])
     def read_notification(notification_id):

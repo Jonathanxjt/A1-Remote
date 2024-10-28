@@ -394,11 +394,11 @@ export default function MyRequests() {
                     <Badge
                       variant="secondary"
                       className={cn({
-                        "bg-blue-100 text-blue-800":
+                        "bg-blue-200 text-blue-800":
                           request.request_type === "AM",
-                        "bg-pink-100 text-pink-800":
+                        "bg-pink-200 text-red-800":
                           request.request_type === "PM",
-                        "bg-purple-100 text-purple-800":
+                        "bg-purple-200 text-purple-800":
                           request.request_type === "Full Day",
                       })}
                     >

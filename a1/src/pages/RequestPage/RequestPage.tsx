@@ -67,7 +67,7 @@ export default function WorkFromHomeForm() {
             (request: any) => {
               const requestDate = new Date(request.request_date)
               return (
-                request.status === "Approved" &&
+                (request.status === "Approved" || request.status === "Pending")&&
                 isWithinInterval(requestDate, {
                   start: startOfSelectedWeek,
                   end: endOfSelectedWeek,

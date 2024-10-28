@@ -1,19 +1,56 @@
-import { Badge } from "@/components/ui/badge"; 
-import { Button } from "@/components/ui/button"; 
-import { Checkbox } from "@/components/ui/checkbox"; 
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"; 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; 
-import { Textarea } from "@/components/ui/textarea"; 
-import { cn } from "@/lib/utils"; 
-import axios from "axios"; 
-import { endOfMonth, endOfWeek, format, isSameDay, isWithinInterval, startOfMonth, startOfWeek } from "date-fns"; 
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp } from "lucide-react"; 
-import { useEffect, useState } from "react"; 
-import { useNavigate } from "react-router-dom"; 
-import { Flip, toast } from "react-toastify"; 
-import "react-toastify/dist/ReactToastify.css"; 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import axios from "axios";
+import { Info } from "lucide-react";
+import {
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isWithinInterval,
+  startOfMonth,
+  startOfWeek,
+  compareAsc,
+} from "date-fns";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronUp,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Flip, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 export default function WorkFromHomeRequests() {
@@ -96,22 +133,51 @@ export default function WorkFromHomeRequests() {
           `http://localhost:5003/work_request/${staffId}/manager`
         );
         if (response.data.code === 200) {
+          // First filter for Pending/Approved requests
           const pendingRequests = response.data.data.work_request.filter(
             (request: any) =>
               request.status === "Pending" || request.status === "Approved"
           );
-          setRequests(pendingRequests);
-        } else {
-          console.error(
-            "Error fetching work requests: ",
-            response.data.message
+
+          // Sort by created_date, oldest first to track order properly
+          const sortedRequests = pendingRequests.sort((a: any, b: any) =>
+            compareAsc(new Date(a.created_date), new Date(b.created_date))
           );
+
+          // Create a map to track request count per week
+          const weekRequests = new Map();
+
+          // Process requests and add exceeded flag
+          const processedRequests = sortedRequests.map((request: any) => {
+            const weekStart = startOfWeek(new Date(request.created_date), {
+              weekStartsOn: 1,
+            }).getTime();
+
+            // Get or initialize array of requests for this week
+            let weekArray = weekRequests.get(weekStart) || [];
+            weekArray.push(request);
+            weekRequests.set(weekStart, weekArray);
+
+            // Mark as exceeded if it's pending and comes after 2 previous requests in the same week
+            if (request.status === "Pending") {
+              request.exceeded = weekArray.length > 2;
+            } else {
+              request.exceeded = false;
+            }
+
+            return request;
+          });
+
+          setRequests(processedRequests);
+          console.log("Processed requests:", processedRequests);
+        } else {
+          console.error("Error fetching work requests:", response.data.message);
         }
       } else {
         console.error("No staff_id found in sessionStorage.");
       }
     } catch (error) {
-      console.error("Error fetching work requests: ", error);
+      console.error("Error fetching work requests:", error);
     } finally {
       setLoading(false);
     }
@@ -456,14 +522,66 @@ export default function WorkFromHomeRequests() {
     closeBulkActionModal();
   };
 
+  const Legend = () => (
+    <div className="p-3 w-48">
+      <h2 className="text-xs font-semibold mb-2">Legend</h2>
+      <ul className="text-xs space-y-1">
+        <li className="flex items-center">
+          <Badge variant="secondary" className="w-4 h-4 mr-2 bg-yellow-100" />
+          <span>Pending</span>
+        </li>
+        <li className="flex items-center">
+          <Badge variant="secondary" className="w-4 h-4 mr-2 bg-green-100" />
+          <span>Approved</span>
+        </li>
+        <li className="flex items-center">
+          <Badge variant="secondary" className="w-4 h-4 mr-2 bg-blue-200" />
+          <span>AM</span>
+        </li>
+        <li className="flex items-center">
+          <Badge variant="secondary" className="w-4 h-4 mr-2 bg-pink-200" />
+          <span>PM</span>
+        </li>
+        <li className="flex items-center">
+          <Badge variant="secondary" className="w-4 h-4 mr-2 bg-purple-200" />
+          <span>Full Day</span>
+        </li>
+        <li className="flex items-center">
+          <div className="w-4 h-4 bg-red-300 mr-2" />
+          <span>Exceeded Request limit</span>
+        </li>
+      </ul>
+    </div>
+  )
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">Work From Home Requests</h1>
+          <p className="text-sm text-muted-foreground">
+            Pending Requests:{" "}
+            <span className="font-medium"></span>
+          </p>
+        </div>
 
-      <h1 className="text-2xl font-bold mb-5">Work From Home Requests</h1>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Info className="h-4 w-4" />
+              <span className="sr-only">Show legend</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="left" align="end" className="w-64">
+            <Legend />
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <div className="flex space-x-4 mb-4">
         <div className="flex flex-col">
           <label htmlFor="view-filter" className="text-sm font-medium mb-1">
@@ -571,7 +689,12 @@ export default function WorkFromHomeRequests() {
             </TableHeader>
             <TableBody>
               {paginatedRequests.map((request) => (
-                <TableRow key={request.request_id}>
+                <TableRow
+                  key={request.request_id}
+                  className={cn({
+                    "bg-red-300": request.exceeded,
+                  })}
+                >
                   <TableCell className="w-[50px]">
                     <Checkbox
                       checked={selectedRequests.includes(request.request_id)}
@@ -594,11 +717,11 @@ export default function WorkFromHomeRequests() {
                     <Badge
                       variant="secondary"
                       className={cn({
-                        "bg-blue-100 text-blue-800":
+                        "bg-blue-200 text-blue-800":
                           request.request_type === "AM",
-                        "bg-pink-100 text-pink-800":
+                        "bg-pink-200 text-red-800":
                           request.request_type === "PM",
-                        "bg-purple-100 text-purple-800":
+                        "bg-purple-200 text-purple-800":
                           request.request_type === "Full Day",
                       })}
                     >
@@ -609,7 +732,7 @@ export default function WorkFromHomeRequests() {
                     style={{
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
-                      maxWidth: "200px", 
+                      maxWidth: "200px",
                     }}
                   >
                     {request.reason || "-"}
@@ -734,21 +857,22 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="comment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${actionType === "reject" ? "rejection" : "revoking"
-                }`}
+              placeholder={`Please provide a reason for ${
+                actionType === "reject" ? "rejection" : "revoking"
+              }`}
               value={actionComment}
               onChange={(e) => setActionComment(e.target.value)}
             />
           </div>
           <DialogFooter className="mt-4">
-            <Button onClick={closeActionModal} variant="outline">
-              Cancel
-            </Button>
             <Button
               onClick={handleActionWithComment}
               disabled={!actionComment.trim()}
             >
               {actionType === "reject" ? "Reject" : "Revoke"}
+            </Button>
+            <Button onClick={closeActionModal} variant="outline">
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -780,8 +904,9 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="bulkComment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${bulkActionType === "reject" ? "rejecting" : "revoking"
-                } all selected requests`}
+              placeholder={`Please provide a reason for ${
+                bulkActionType === "reject" ? "rejecting" : "revoking"
+              } all selected requests`}
               value={bulkActionComment}
               onChange={(e) => setBulkActionComment(e.target.value)}
             />

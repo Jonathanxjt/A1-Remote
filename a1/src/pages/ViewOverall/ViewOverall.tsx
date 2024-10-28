@@ -14,6 +14,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Employee } from "src/Models/Employee";
+import { useNavigate } from "react-router-dom";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -43,6 +44,23 @@ interface WorkRequest {
 }
 
 export default function Component() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userData = sessionStorage.getItem("user");
+
+    if (userData) {
+      const user = JSON.parse(userData);
+      console.log(user);
+      if (user.role !== 1) {
+        navigate("/");
+      }
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

@@ -113,7 +113,7 @@ export default function NotificationPolling({ staffId, setNotifications }) {
   const notifyUser = (notification) => {
     console.log("Showing toast notification...");
     if(notification.sender_id != notification.receiver_id) {
-      toast.info(`${notification.sender_name} ${notification.message}`, {
+      toast.info(`${notification.message}`, {
         position: "bottom-right",
         autoClose: 3000,
         hideProgressBar: true,

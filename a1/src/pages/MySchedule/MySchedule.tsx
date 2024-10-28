@@ -74,6 +74,23 @@ export default function Component() {
     return new Date(dateStr);
   };
 
+
+  // Handle day selection
+  
+  const handleDateSelection = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
+      setSelectedDate(date);
+      setCurrentDate(date);
+    }
+  };
+  const isSameDay = (date1: Date, date2: Date): boolean => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
   const fetchEmployeesUnderManager = async () => {
     try {
       const reportingManagerId = user.reporting_manager;
@@ -102,15 +119,8 @@ export default function Component() {
             employeesPMList.push(employeeData);
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              const scheduleDate = new Date(s.date)
-                .toISOString()
-                .split("T")[0];
-              const currentDateString = currentDate
-                .toISOString()
-                .split("T")[0];
-              // console.log("Schedule date:", scheduleDate);
-              console.log("Current date:", currentDateString);
-              return scheduleDate === currentDateString;
+              const scheduleDate = new Date(s.date);
+              return isSameDay(scheduleDate, currentDate);
             });
 
             const hasAM = todaySchedule.some(
@@ -179,13 +189,10 @@ export default function Component() {
             inOfficeCountPM += 1;
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              // Format the schedule date to 'YYYY-MM-DD'
-              const scheduleDate = new Date(s.date).toISOString().split("T")[0];
-
-              // Compare only the date parts
-              return scheduleDate === formattedDate;
+              const scheduleDate = new Date(s.date);
+              return isSameDay(scheduleDate, date);
             });
-
+            
             const hasAM = todaySchedule.some(
               (s: any) => s.request_type === "AM" && s.status === "Approved"
             );
@@ -330,6 +337,8 @@ export default function Component() {
       }
 
       setCurrentDate(nextDate);
+      setSelectedDate(nextDate);
+
     } else if (currentView === "month") {
       // Go to the next month (first day of the month), no need to consider weekends
       const nextMonthDate = new Date(
@@ -421,9 +430,8 @@ export default function Component() {
           onClick={() => {
             if (!isWeekend) {
               // setCurrentDate(date);
-              setSelectedDate(date);
-              console.log("actual clicked date:", date);
-              console.log("Selected date:", selectedDate);
+              handleDateSelection(date);
+              console.log("Date selected:", date); 
               // this line below is causing the current date to be set to be one the selected date
               // console.log("Selected date:", currentDate);
             }
@@ -802,13 +810,6 @@ export default function Component() {
           </Tabs>
         </Card>
       </main>
-      {/* {selectedDate && (
-        <footer className="bg-white shadow-sm py-2 sm:py-4 px-4 sm: px-6 mt-4">
-          <p className="text-base sm:text-lg font-semibold">
-            Selected Date: {selectedDate.toDateString()}
-          </p>
-        </footer>
-      )} */}
     </div>
   );
 }

@@ -137,12 +137,14 @@ const Sidebar: React.FC<SidebarProps> = ({ notifications, onLogout }) => {
       </div>
       {isLoggedIn && (
         <nav className="sidebar-nav flex flex-col space-y-4 p-4">
+          {userRole == 1 && (
           <NavItem
             icon={<FileText size={24} />}
             label="Dashboard"
             collapsed={collapsed}
             onClick={handleDashboardClick}
           />
+          )}
           <NavItem
             icon={<FilePenLine size={24} />}
             label="Make Request"
