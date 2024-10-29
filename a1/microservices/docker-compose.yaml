@@ -79,6 +79,19 @@ services:
     networks:
       - my_network
 
+  autoreject-cron:
+    build:
+      context: .
+      dockerfile: dockerfile_autoreject
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - DATABASE_URL=${DATABASE_URL}  # Pass the database URL from your .env file
+    networks:
+      - my_network
+    restart: unless-stopped  # Ensure the service restarts if it fails
+
+
 networks:
   my_network:
     driver: bridge
