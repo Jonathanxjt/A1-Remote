@@ -65,15 +65,27 @@ def create_app():
     @app.route("/schedule/team/<int:reporting_manager>")
     def get_team_schedules(reporting_manager):
         try:
+            schedules = []
+            manager_schedule_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/schedule/{reporting_manager}/employee")
+            if manager_schedule_response.status_code == 200:
+                manager_schedule_data = manager_schedule_response.json().get("data", {}).get("work_request", [])
+                schedules.append({
+                "employee": {"staff_id": reporting_manager, "name": "Reporting Manager"},  # Customize as needed
+                "schedule": manager_schedule_data if manager_schedule_data else "No schedule found."
+                })
+            else:
+                schedules.append({
+                "employee": {"staff_id": reporting_manager, "name": "Reporting Manager"},
+                "schedule": "No schedule found."
+            })
+                
             employee_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee/{reporting_manager}/team")
-            
             if employee_response.status_code == 200:
                 team_members = employee_response.json().get("data").get("members", [])
-                
+        
                 if not team_members:
                     return jsonify({"code": 404, "message": "No team members found."}), 404
 
-                schedules = []
                 for member in team_members:
                     staff_id = member.get("staff_id")
                     schedule_response = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
