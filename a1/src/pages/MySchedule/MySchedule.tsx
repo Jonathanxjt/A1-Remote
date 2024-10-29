@@ -353,14 +353,15 @@ export default function Component() {
   const getStatusBadge = (status: WorkStatus) => {
     if (!status) return null;
     const colorMap = {
-      AM: "bg-green-500",
-      PM: "bg-green-500",
-      "Full Day": "bg-green-500",
-      Pending: "bg-yellow-500",
+      AM: "bg-blue-200 text-blue-800",
+      PM: "bg-pink-200 text-red-800",
+      "Full Day": "bg-purple-200 text-purple-800",
+      Pending: "bg-yellow-200 text-yellow-800",
     };
     return (
       <Badge
-        className={`${colorMap[status]} text-white text-xs px-1 py-0.5 rounded`}
+        variant="secondary"
+        className={`${colorMap[status]} text-xs px-1 py-0.5 rounded`}
       >
         {status}
       </Badge>

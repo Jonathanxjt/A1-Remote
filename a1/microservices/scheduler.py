@@ -16,6 +16,9 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
+    db.init_app(app)
+    CORS(app)    
+
     # URLs for the microservices
     WORK_REQUEST_SERVICE_URL = "http://work-request:5003/work_request"
     SCHEDULE_SERVICE_URL = "http://schedule:5004/schedule"
@@ -89,6 +92,7 @@ def create_app():
                 "receiver_id": approval_manager_id,  # The manager who will approve the request
                 "request_id": new_request_id,
                 "request_type": request_type,
+                "request_date": request_date,
                 "status": "Pending",  # Initial status of the work request
                 "exceed": exceed
             }
@@ -124,50 +128,56 @@ def create_app():
                 "message": f"An unexpected error occurred: {str(e)}"
             }), 500
 
+
+
     @app.route("/scheduler/<int:request_id>/update_work_request_and_schedule", methods=["PUT"])
     def update_work_request_and_schedule(request_id):
         try:
             data = request.json
-
             new_status = data.get('status')
             comments = data.get('comments')
 
+            # Validate required fields
             if not new_status:
                 return jsonify({"code": 400, "message": "Status is required."}), 400
 
+            # Update WorkRequest status
             work_request_url = f"{WORK_REQUEST_SERVICE_URL}/{request_id}/update_status"
             work_request_payload = {
                 "status": new_status,
                 "comments": comments
             }
-
             work_request_response = requests.put(work_request_url, json=work_request_payload)
+            
             if work_request_response.status_code != 200:
                 return jsonify({
                     "code": work_request_response.status_code,
                     "message": "Failed to update WorkRequest",
                     "details": work_request_response.json()
                 }), work_request_response.status_code
-            
-            work_request = work_request_response.json()["data"]
-            approval_manager_id = work_request["approval_manager_id"]
-            receiver_id = work_request["staff_id"]
-            request_type = work_request["request_type"]
 
+            # Retrieve necessary fields from the work request response
+            work_request = work_request_response.json().get("data", {})
+            approval_manager_id = work_request.get("approval_manager_id")
+            receiver_id = work_request.get("staff_id")
+            request_type = work_request.get("request_type")
+            request_date = work_request.get("request_date")
+
+            # Validate and reformat request_date
+            try:
+                parsed_request_date = datetime.strptime(request_date, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y-%m-%d")
+            except ValueError:
+                return jsonify({"code": 400, "message": "Invalid date format for request_date"}), 400
+
+            # Update Schedule status
             schedule_url = f"{SCHEDULE_SERVICE_URL}/{request_id}/update_status"
-            schedule_payload = {
-                "status": new_status
-            }
-
+            schedule_payload = {"status": new_status}
             schedule_response = requests.put(schedule_url, json=schedule_payload)
-
+            
             if schedule_response.status_code != 200:
+                # Rollback WorkRequest if schedule update fails
                 rollback_url = f"{WORK_REQUEST_SERVICE_URL}/{request_id}/update_status"
-                rollback_payload = {
-                    "status": "Pending", 
-                    "comments": ""
-                }
-
+                rollback_payload = {"status": "Pending", "comments": ""}
                 rollback_response = requests.put(rollback_url, json=rollback_payload)
 
                 if rollback_response.status_code != 200:
@@ -182,24 +192,21 @@ def create_app():
                     "message": "Schedule update failed, WorkRequest rolled back.",
                     "details": schedule_response.json()
                 }), schedule_response.status_code
-            
-            if new_status in ["Approved", "Rejected", "Revoked"]:
-                notification_data = {
-                    "sender_id": approval_manager_id,  
-                    "receiver_id": receiver_id,      
-                    "request_id": request_id,
-                    "request_type": request_type,
-                    "status": new_status
-                }
-            elif new_status in ["Cancelled", "Withdrawn"]:
-                notification_data = {
-                    "sender_id": receiver_id,   
-                    "receiver_id": approval_manager_id,   
-                    "request_id": request_id,
-                    "request_type": request_type,
-                    "status": new_status
-                }
 
+            # Prepare notification data with formatted request_date
+            sender_id = approval_manager_id if new_status in ["Approved", "Rejected", "Revoked"] else receiver_id
+            receiver_id = receiver_id if new_status in ["Approved", "Rejected", "Revoked"] else approval_manager_id
+
+            notification_data = {
+                "sender_id": sender_id,
+                "receiver_id": receiver_id,
+                "request_id": request_id,
+                "request_type": request_type,
+                "request_date": parsed_request_date,  # Correctly formatted date
+                "status": new_status
+            }
+
+            # Send Notification
             notification_response = requests.post(f"{NOTIFICATION_SERVICE_URL}/create_notification", json=notification_data)
             if notification_response.status_code != 201:
                 return jsonify({
@@ -207,19 +214,21 @@ def create_app():
                     "message": f"Failed to send notification: {notification_response.json().get('message', 'Unknown error')}"
                 }), notification_response.status_code
 
+            # Return success response
             return jsonify({
                 "code": 200,
                 "message": "WorkRequest, Schedule, and Notification updated successfully.",
                 "work_request_response": work_request_response.json(),
                 "schedule_response": schedule_response.json(),
-                "notification_response": notification_response.json()["data"]
+                "notification_response": notification_response.json().get("data")
             }), 200
 
         except requests.exceptions.RequestException as e:
             return jsonify({"code": 500, "message": f"An error occurred while making a request: {str(e)}"}), 500
 
         except Exception as e:
-            return jsonify({"code": 500, "message": f"An internal error occurred: {str(e)}"}), 500
+            return jsonify({"code": 500, "message": f"An internal error occurred: {str(e)}"}),
+
     return app
 
 if __name__ == "__main__":

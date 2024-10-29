@@ -15,6 +15,7 @@ import MySchedule from "./pages/MySchedule/MySchedule";
 import NotFound from "./pages/NotFound";
 import RequestPage from "./pages/RequestPage/RequestPage.tsx";
 import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
+import NotificationSocket from "./components/NotificationSocket.js";
 
 const App: React.FC = () => {
   const [notifications, setNotifications] = useState([]);
@@ -60,9 +61,9 @@ const App: React.FC = () => {
       {/* ensures that the sidebar does not cover the main-content */}
       <Sidebar notifications={notifications}  onLogout={handleLogout} />
       <div className="main-content">
-        {/* Conditionally render NotificationPolling only when logged in */}
+        {/* Conditionally render NotificationWebSocket only when logged in */}
         {staffId && (
-          <NotificationPolling
+          <NotificationSocket
             staffId={staffId}
             setNotifications={setNotifications}
           />
@@ -84,7 +85,7 @@ const App: React.FC = () => {
           {/* ManageRequests route */}
           <Route path="/MyRequests" element={<MyRequests />} />{" "}
           {/* MyRequests route */}
-          <Route path="/Mailbox" element={<Mailbox />} />
+          <Route path="/Mailbox"  element={<Mailbox notifications={notifications} setNotifications={setNotifications} />} />
           <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
 

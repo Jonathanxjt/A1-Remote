@@ -741,9 +741,9 @@ export default function WorkFromHomeRequests() {
                     <Badge
                       variant="secondary"
                       className={cn({
-                        "bg-yellow-100 text-yellow-800":
+                        "bg-yellow-200 text-yellow-800":
                           request.status === "Pending",
-                        "bg-green-100 text-green-800":
+                        "bg-green-200 text-green-800":
                           request.status === "Approved",
                       })}
                     >

@@ -11,8 +11,8 @@ import { useEffect, useState } from "react";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default function NotificationPage() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+export default function NotificationPage({ notifications: initialNotifications, setNotifications}) {
+  const [notifications, setLocalNotifications] = useState(initialNotifications);
   const [selectedNotifications, setSelectedNotifications] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
   const [viewFilter, setViewFilter] = useState("all");
@@ -24,32 +24,10 @@ export default function NotificationPage() {
     format(new Date(), "yyyy-MM")
   );
 
-  const fetchNotifications = async () => {
-    try {
-      const staffId = sessionStorage.getItem("staff_id");
-      if (staffId) {
-        const response = await axios.get(
-          `http://localhost:5008/notification/${staffId}`
-        );
-        if (response.data.code === 200) {
-          setNotifications(response.data.data.Notifications);
-        } else {
-          console.error(
-            "Error fetching notifications: ",
-            response.data.message
-          );
-        }
-      } else {
-        console.error("No staff_id found in sessionStorage.");
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    setLocalNotifications(initialNotifications);
+  }, [initialNotifications]);
+
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");

@@ -66,6 +66,7 @@ services:
       - my_network
   
   notification:
+  
     build:
       context: .
       dockerfile: dockerfile_notification
