@@ -76,12 +76,13 @@ def create_app():
             else:
                 schedules.append({
                 "employee": {"staff_id": reporting_manager, "name": "Reporting Manager"},
-                "schedule": "Error fetching manager's schedule."
+                "schedule": "No schedule found."
             })
+                
             employee_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee/{reporting_manager}/team")
             if employee_response.status_code == 200:
                 team_members = employee_response.json().get("data").get("members", [])
-                
+        
                 if not team_members:
                     return jsonify({"code": 404, "message": "No team members found."}), 404
 

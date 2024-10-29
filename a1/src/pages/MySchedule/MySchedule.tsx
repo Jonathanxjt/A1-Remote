@@ -94,9 +94,47 @@ export default function Component() {
   const fetchEmployeesUnderManager = async () => {
     try {
       const reportingManagerId = user.reporting_manager;
-      const response = await axios.get(
-        `http://localhost:5004/schedule/team/${reportingManagerId}`
-      );
+      const staff_id = user.staff_id;
+      const role = user.role;
+      let response;
+
+      if (role === 1 || role === 3) {
+        // Fetch schedules for both manager and team
+        const ownScheduleResponse = await axios.get(
+          `http://localhost:5004/schedule/team/${staff_id}`
+        );
+        const teamScheduleResponse = await axios.get(
+          `http://localhost:5004/schedule/team/${reportingManagerId}`
+        );
+      
+        if (
+          ownScheduleResponse.data.code === 200 &&
+          teamScheduleResponse.data.code === 200
+        ) {
+          console.log("ownScheduleResponse", ownScheduleResponse.data.data);
+          console.log("teamScheduleResponse", teamScheduleResponse.data.data);
+          // Combine data from both responses
+          response = {
+            data: {
+              code: 200,
+              data: [...ownScheduleResponse.data.data, ...teamScheduleResponse.data.data]
+            }
+          };
+        } else {
+          console.error("Failed to fetch schedules for manager or team.");
+          response = {
+            data: {
+              code: 500,
+              message: "Error fetching schedules"
+            }
+          };
+        }
+      } else {
+        // If not a manager role, only get the team schedule
+        response = await axios.get(
+          `http://localhost:5004/schedule/team/${reportingManagerId}`
+        );
+      }
 
       if (response.data.code === 200) {
         const employeesAMList: Employee[] = [];
@@ -171,7 +209,7 @@ export default function Component() {
       const response = await axios.get(
         `http://localhost:5004/schedule/team/${reportingManagerId}`
       );
-
+      console.log("response", response.data.data);
       if (response.data.code === 200) {
         let wfhCountAM = 0;
         let inOfficeCountAM = 0;
@@ -183,7 +221,6 @@ export default function Component() {
 
         response.data.data.forEach((item: any) => {
           const schedule = item.schedule;
-
           if (!schedule || schedule === "No schedule found.") {
             inOfficeCountAM += 1;
             inOfficeCountPM += 1;
