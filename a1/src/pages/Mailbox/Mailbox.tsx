@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default function NotificationPage({ notifications: initialNotifications, setNotifications}) {
+export default function NotificationPage({ notifications: initialNotifications, setNotifications }) {
   const [notifications, setLocalNotifications] = useState(initialNotifications);
   const [selectedNotifications, setSelectedNotifications] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
@@ -277,7 +277,7 @@ export default function NotificationPage({ notifications: initialNotifications, 
                   <Checkbox
                     checked={
                       selectedNotifications.length ===
-                        paginatedNotifications.length &&
+                      paginatedNotifications.length &&
                       paginatedNotifications.length > 0
                     }
                     onCheckedChange={toggleSelectAll}

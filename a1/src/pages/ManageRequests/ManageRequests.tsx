@@ -857,9 +857,8 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="comment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${
-                actionType === "reject" ? "rejection" : "revoking"
-              }`}
+              placeholder={`Please provide a reason for ${actionType === "reject" ? "rejection" : "revoking"
+                }`}
               value={actionComment}
               onChange={(e) => setActionComment(e.target.value)}
             />
@@ -904,9 +903,8 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="bulkComment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${
-                bulkActionType === "reject" ? "rejecting" : "revoking"
-              } all selected requests`}
+              placeholder={`Please provide a reason for ${bulkActionType === "reject" ? "rejecting" : "revoking"
+                } all selected requests`}
               value={bulkActionComment}
               onChange={(e) => setBulkActionComment(e.target.value)}
             />

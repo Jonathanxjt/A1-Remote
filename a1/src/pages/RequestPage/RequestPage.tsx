@@ -58,7 +58,7 @@ export default function WorkFromHomeForm() {
         const response = await axios.get(
           `http://localhost:5003/work_request/${staffId}/employee`
         );
-  
+
         if (response.data.code === 200) {
           const startOfSelectedWeek = startOfDay(startOfWeek(date, { weekStartsOn: 1 }));
           const endOfSelectedWeek = endOfDay(endOfWeek(date, { weekStartsOn: 1 }));
@@ -67,7 +67,7 @@ export default function WorkFromHomeForm() {
             (request: any) => {
               const requestDate = new Date(request.request_date)
               return (
-                (request.status === "Approved" || request.status === "Pending")&&
+                (request.status === "Approved" || request.status === "Pending") &&
                 isWithinInterval(requestDate, {
                   start: startOfSelectedWeek,
                   end: endOfSelectedWeek,
@@ -75,7 +75,7 @@ export default function WorkFromHomeForm() {
               );
             }
           );
-  
+
           setRequests(filteredRequests);
           console.log("Filtered work requests for the selected week:", filteredRequests);
           setExceed(filteredRequests.length >= 2);
@@ -89,7 +89,7 @@ export default function WorkFromHomeForm() {
       console.error("Error fetching work requests:", error);
     }
   };
-  
+
 
   useEffect(() => {
     if (selectedDate) {
@@ -97,14 +97,13 @@ export default function WorkFromHomeForm() {
     }
   }, [selectedDate]);
 
-  // React Hook Form for handling form state and validation
   const form = useForm({
     defaultValues: {
       date: undefined,
       timePeriod: "",
       reasons: "",
     },
-    mode: "onTouched", // Validate when the field is touched
+    mode: "onTouched",
   });
 
   const onSubmit = async (data: {
@@ -125,7 +124,7 @@ export default function WorkFromHomeForm() {
     timePeriod: string;
     reasons: string;
   }) => {
-    const staff_id = sessionStorage.getItem("staff_id"); // Pull staff_id from sessionStorage
+    const staff_id = sessionStorage.getItem("staff_id");
     if (!staff_id) {
       toast.error("Staff ID not found. Please log in again.", {
         position: "top-right",
@@ -142,9 +141,8 @@ export default function WorkFromHomeForm() {
     }
 
     const requestData = {
-      staff_id, // Fetch staff_id from sessionStorage
+      staff_id,
       request_type: data.timePeriod,
-      // Format the date as a local date before submitting
       request_date: data.date ? format(data.date, "yyyy-MM-dd") : undefined,
       reason: data.reasons,
       exceed: exceed
@@ -152,12 +150,11 @@ export default function WorkFromHomeForm() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5005/New_WR", // Your API endpoint
+        "http://localhost:5005/New_WR",
         requestData
       );
 
       if (response.data.code === 201) {
-        // Show success message
         toast.success("Request Submitted Successfully!", {
           position: "top-right",
           autoClose: 4000,
@@ -174,12 +171,10 @@ export default function WorkFromHomeForm() {
         }, 2500);
       }
     } catch (error: any) {
-      // Extract error message from Axios response
       const errorMessage =
         error.response?.data?.message ||
         "Error submitting request. Please try again.";
 
-      // Show error message in toast
       toast.error(`Error: ${errorMessage}`, {
         position: "top-right",
         autoClose: 5000,
@@ -195,7 +190,7 @@ export default function WorkFromHomeForm() {
       console.error("Error submitting request:", errorMessage);
     }
     finally {
-      setExceed(false); // Reset exceed to false after the request is submitted
+      setExceed(false);
     }
   };
 
@@ -213,20 +208,18 @@ export default function WorkFromHomeForm() {
           Work from Home (WFH) Request
         </h1>
 
-        {/* Form Structure */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Date Field */}
             <FormField
               control={form.control}
               name="date"
-              rules={{ required: "Please select a date" }} // Required validation
+              rules={{ required: "Please select a date" }}
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <label className="text-gray-700">
                     Date of Work from Home
                   </label>
-                  <Popover  open={open} onOpenChange={setOpen}>
+                  <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -258,7 +251,7 @@ export default function WorkFromHomeForm() {
                           field.onChange(date);
                           setSelectedDate(date);
                           setOpen(false);
-                          
+
                         }}
                         disabled={disabledDays}
                         initialFocus
@@ -271,7 +264,6 @@ export default function WorkFromHomeForm() {
               )}
             />
 
-            {/* Time Period Field */}
             <FormField
               control={form.control}
               name="timePeriod"
@@ -299,7 +291,6 @@ export default function WorkFromHomeForm() {
               )}
             />
 
-            {/* Reasons Field */}
             <FormField
               control={form.control}
               name="reasons"
@@ -319,7 +310,6 @@ export default function WorkFromHomeForm() {
               )}
             />
 
-            {/* Submit Button */}
             <Button type="submit" className="w-full">
               Submit Request
             </Button>

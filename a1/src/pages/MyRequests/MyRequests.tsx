@@ -404,7 +404,7 @@ export default function MyRequests() {
                     >
                       {request.request_type}
                     </Badge>
-                
+
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -526,7 +526,7 @@ export default function MyRequests() {
           </div>
         </div>
       </div>
-      
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -542,7 +542,7 @@ export default function MyRequests() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-          <Button onClick={handleCancelConfirm}>
+            <Button onClick={handleCancelConfirm}>
               Yes, cancel it
             </Button>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>

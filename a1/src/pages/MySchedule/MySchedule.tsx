@@ -66,7 +66,7 @@ export default function Component() {
       await fetchEmployeesUnderManager(); // Wait for the fetch to complete
       setDayLoading(false); // Set loading state to false after fetch completes
     };
-  
+
     fetchData();
   }, [currentDate]);
 
@@ -76,7 +76,7 @@ export default function Component() {
 
 
   // Handle day selection
-  
+
   const handleDateSelection = (date: Date) => {
     const dayOfWeek = date.getDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
@@ -192,7 +192,7 @@ export default function Component() {
               const scheduleDate = new Date(s.date);
               return isSameDay(scheduleDate, date);
             });
-            
+
             const hasAM = todaySchedule.some(
               (s: any) => s.request_type === "AM" && s.status === "Approved"
             );
@@ -421,10 +421,9 @@ export default function Component() {
         <div
           key={day}
           className={`p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] cursor-pointer transition-colors duration-200 
-            ${
-              isWeekend
-                ? "bg-gray-300 cursor-not-allowed opacity-60"
-                : isSelected
+            ${isWeekend
+              ? "bg-gray-300 cursor-not-allowed opacity-60"
+              : isSelected
                 ? "bg-blue-100"
                 : "hover:bg-gray-100"
             }`}
@@ -432,7 +431,7 @@ export default function Component() {
             if (!isWeekend) {
               // setCurrentDate(date);
               handleDateSelection(date);
-              console.log("Date selected:", date); 
+              console.log("Date selected:", date);
               // this line below is causing the current date to be set to be one the selected date
               // console.log("Selected date:", currentDate);
             }
@@ -440,11 +439,10 @@ export default function Component() {
         >
           <div className="flex justify-between items-start">
             <div
-              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${
-                isToday
-                  ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
-                  : ""
-              } text-sm sm:text-base`}
+              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${isToday
+                ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
+                : ""
+                } text-sm sm:text-base`}
             >
               {day}
             </div>
@@ -503,7 +501,6 @@ export default function Component() {
         <div className="mt-6 flex space-x-4">
           <div className="w-1/2 pr-2 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
-            {/* AM Count */}
             <h4 className="text-3xl font-bold">AM Status</h4>
             <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
@@ -516,7 +513,6 @@ export default function Component() {
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
-            {/* Search Input */}
             <input
               type="text"
               className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
@@ -524,7 +520,6 @@ export default function Component() {
               value={searchTermAM}
               onChange={(e) => setSearchTermAM(e.target.value)}
             />
-            {/* AM WFH  */}
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
@@ -538,13 +533,12 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
                 </ul>
               </div>
-              {/* AM in office */}
               <div className="w-1/2">
                 <h6 className="font-semibold">In Office:</h6>
                 <ul className="list-disc pl-5">
@@ -554,7 +548,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -565,7 +559,6 @@ export default function Component() {
 
           <div className="w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
-            {/* PM Count */}
             <h4 className="text-3xl font-bold">PM Status</h4>
             <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
@@ -578,7 +571,6 @@ export default function Component() {
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
-            {/* Search Input */}
             <input
               type="text"
               className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
@@ -586,7 +578,6 @@ export default function Component() {
               value={searchTermPM}
               onChange={(e) => setSearchTermPM(e.target.value)}
             />
-            {/* PM WFH  */}
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
@@ -600,7 +591,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -615,7 +606,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -642,7 +633,7 @@ export default function Component() {
       }[]
     >([]);
     const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const [loading, setLoading] = useState<boolean>(true); // Add loading state
+    const [loading, setLoading] = useState<boolean>(true);
     startOfWeek.setDate(currentDate.getDate() - daysToMonday);
 
     useEffect(() => {
@@ -650,18 +641,18 @@ export default function Component() {
         let data = [];
         for (let i = 0; i < 5; i++) {
           const date = new Date();
-          date.setDate(date.getDate() - date.getDay() + 1 + i); // Get Mon-Fri dates
+          date.setDate(date.getDate() - date.getDay() + 1 + i);
           const dayData = await fetchEmployeesUnderManagerForDay(date);
           data.push(dayData);
         }
         setWeekData(data);
         setLoading(false);
       };
-      fetchWeekData(); // Call the function inside useEffect
-    }, []); // Empty array ensures this runs only once
+      fetchWeekData();
+    }, []);
 
     if (loading) {
-      return <div>Loading...</div>; // Render loading indicator
+      return <div>Loading...</div>;
     }
 
     return (
@@ -669,7 +660,7 @@ export default function Component() {
         {weekData.map((dayCount, i) => {
           // Create a new date for each day of the week
           const currentDate = new Date(startOfWeek);
-          currentDate.setDate(startOfWeek.getDate() + i); // Adjust to the correct day of the week
+          currentDate.setDate(startOfWeek.getDate() + i);
 
           return (
             <Card key={i} className="p-0">
@@ -678,15 +669,11 @@ export default function Component() {
                 <p className="text-md mb-2">
                   {currentDate.toLocaleDateString()}{" "}
                 </p>
-
-                {/* WFH and In Office counts */}
                 <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
                   {" "}
-                  {/* Light green background */}
                   <h4 className="font-bold">AM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
                     {" "}
-                    {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">{dayCount?.wfhCountAM}</p>
@@ -700,11 +687,9 @@ export default function Component() {
 
                 <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
                   {" "}
-                  {/* Light green background */}
                   <h4 className="font-bold">PM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
                     {" "}
-                    {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">{dayCount?.wfhCountPM}</p>
@@ -757,12 +742,10 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${
-                        months[currentDate.getMonth()]
-                      }`
-                    : `${
-                        months[currentDate.getMonth()]
-                      } ${currentDate.getFullYear()}`}{" "}
+                    ? `${currentDate.getDate()} ${months[currentDate.getMonth()]
+                    }`
+                    : `${months[currentDate.getMonth()]
+                    } ${currentDate.getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>
@@ -793,7 +776,6 @@ export default function Component() {
             <CardContent className="p-2 sm:p-4">
               <TabsContent value="day">{renderDayView()}</TabsContent>
               <TabsContent value="week">{renderWeekView()}</TabsContent>
-              {/* Month view */}
               <TabsContent value="month">
                 <div className="grid grid-cols-7 gap-0">
                   {daysOfWeek.map((day) => (

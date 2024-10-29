@@ -5,7 +5,6 @@ export default function HomePage() {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    // Check if staff_id is set in sessionStorage
     const staff_id = sessionStorage.getItem("staff_id");
 
     if (staff_id) {
@@ -16,7 +15,6 @@ export default function HomePage() {
 
   const fetchEmployeeData = async (staff_id) => {
     try {
-      // Make the Axios request to retrieve employee data
       const response = await axios.get(`http://localhost:5002/employee/${staff_id}`);
 
       if (response.data.code === 200) {
@@ -28,7 +26,6 @@ export default function HomePage() {
         setUserData(employeeData);
         console.log("Employee data fetched successfully:", employeeData);
       } else {
-        // Handle the case where the API request was not successful
         console.error("Error fetching employee data:", response.data.message);
       }
     } catch (error) {
@@ -38,7 +35,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      {/* Conditional rendering based on whether userData is available */}
       <h1 className="text-center">
         {userData ? `Welcome, ${userData.staff_fname}` : "Welcome"}
       </h1>

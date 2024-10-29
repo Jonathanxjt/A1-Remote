@@ -83,7 +83,6 @@ export default function LoginPage({ onLogin }) { // <-- Accept onLogin prop
             transition: Flip,
           });
 
-          // Call the onLogin function to update App's state
           onLogin(staffId);
 
           setTimeout(() => {
@@ -128,7 +127,7 @@ export default function LoginPage({ onLogin }) { // <-- Accept onLogin prop
 
   return (
     <div className="login-page-container">
- 
+
 
       <Card className="login-card">
         <CardHeader className="login-card-header">

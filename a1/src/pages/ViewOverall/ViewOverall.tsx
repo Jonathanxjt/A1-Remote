@@ -60,7 +60,7 @@ export default function Component() {
     }
   }, [navigate]);
 
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -94,7 +94,7 @@ export default function Component() {
 
   const fetchEmployeesUnderManagerWeekView = async (date: Date) => {
     try {
-        const endpoint =
+      const endpoint =
         selectedDepartment === "All"
           ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
           : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
@@ -118,10 +118,8 @@ export default function Component() {
             inOfficeCountPM += 1;
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              // Format the schedule date to 'YYYY-MM-DD'
               const scheduleDate = new Date(s.date).toISOString().split("T")[0];
 
-              // Compare only the date parts
               return scheduleDate === formattedDate;
             });
 
@@ -151,13 +149,12 @@ export default function Component() {
 
             // If they have a full day schedule, increment both counts
             if (isFullDay) {
-              wfhCountAM++; // Full Day also counts for AM
-              wfhCountPM++; // Full Day also counts for PM
+              wfhCountAM++;
+              wfhCountPM++;
             }
           }
         });
 
-        // Return WFH and In Office counters for AM and PM
         return {
           wfhCountAM,
           inOfficeCountAM,
@@ -208,7 +205,6 @@ export default function Component() {
             const todaySchedule = schedule.filter((s: any) => {
               const scheduleDate = new Date(s.date).toISOString().split("T")[0];
               const currentDateString = currentDate.toISOString().split("T")[0];
-              // console.log("Schedule date:", scheduleDate);
               console.log("Current date:", currentDateString);
               return scheduleDate === currentDateString;
             });
@@ -429,16 +425,14 @@ export default function Component() {
         <div
           key={day}
           className={`p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] cursor-pointer transition-colors duration-200 
-            ${
-              isWeekend
-                ? "bg-gray-300 cursor-not-allowed opacity-60"
-                : isSelected
+            ${isWeekend
+              ? "bg-gray-300 cursor-not-allowed opacity-60"
+              : isSelected
                 ? "bg-blue-100"
                 : "hover:bg-gray-100"
             }`}
           onClick={() => {
             if (!isWeekend) {
-              // setCurrentDate(date);
               setSelectedDate(date);
               console.log("actual clicked date:", date);
               console.log("Selected date:", selectedDate);
@@ -449,11 +443,10 @@ export default function Component() {
         >
           <div className="flex justify-between items-start">
             <div
-              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${
-                isToday
-                  ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
-                  : ""
-              } text-sm sm:text-base`}
+              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${isToday
+                ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
+                : ""
+                } text-sm sm:text-base`}
             >
               {day}
             </div>
@@ -502,7 +495,7 @@ export default function Component() {
     );
 
     if (dayLoading) {
-      return <div>Loading...</div>; // Render loading indicator
+      return <div>Loading...</div>;
     }
 
     return (
@@ -510,7 +503,6 @@ export default function Component() {
         <div className="mt-6 flex space-x-4">
           <div className="w-1/2 pr-2 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
-            {/* AM Count */}
             <h4 className="text-3xl font-bold">AM Status</h4>
             <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
@@ -523,7 +515,6 @@ export default function Component() {
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
-            {/* Search Input */}
             <input
               type="text"
               className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
@@ -531,7 +522,7 @@ export default function Component() {
               value={searchTermAM}
               onChange={(e) => setSearchTermAM(e.target.value)}
             />
-            {/* AM WFH  */}
+
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
@@ -545,13 +536,12 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
                 </ul>
               </div>
-              {/* AM in office */}
               <div className="w-1/2">
                 <h6 className="font-semibold">In Office:</h6>
                 <ul className="list-disc pl-5">
@@ -561,7 +551,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -572,7 +562,6 @@ export default function Component() {
 
           <div className="w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
-            {/* PM Count */}
             <h4 className="text-3xl font-bold">PM Status</h4>
             <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
@@ -585,7 +574,6 @@ export default function Component() {
                 <p className="text-sm text-gray-500">In Office</p>
               </div>
             </div>
-            {/* Search Input */}
             <input
               type="text"
               className="p-2 mt-4 bg-gray-100 border border-gray-300 rounded-md w-full mb-4"
@@ -593,7 +581,6 @@ export default function Component() {
               value={searchTermPM}
               onChange={(e) => setSearchTermPM(e.target.value)}
             />
-            {/* PM WFH  */}
             <div className="flex space-x-4 mt-2">
               <div className="w-1/2">
                 <h6 className="font-semibold">Working From Home:</h6>
@@ -607,7 +594,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -622,7 +609,7 @@ export default function Component() {
                       a.fullName
                         .split(" ")[1]
                         .localeCompare(b.fullName.split(" ")[1])
-                    ) // Sorting by last name
+                    )
                     .map((employee) => (
                       <li key={employee.id}>{employee.fullName}</li>
                     ))}
@@ -649,7 +636,7 @@ export default function Component() {
       }[]
     >([]);
     const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const [loading, setLoading] = useState<boolean>(true); // Add loading state
+    const [loading, setLoading] = useState<boolean>(true);
     startOfWeek.setDate(currentDate.getDate() - daysToMonday);
 
     useEffect(() => {
@@ -665,38 +652,32 @@ export default function Component() {
         setWeekData(data);
         setLoading(false);
       };
-      fetchWeekData(); // Call the function inside useEffect
-    }, [selectedDepartment]); // Empty array ensures this runs only once
+      fetchWeekData();
+    }, [selectedDepartment]);
 
     if (loading) {
-      return <div>Loading...</div>; // Render loading indicator
+      return <div>Loading...</div>;
     }
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {weekData.map((dayCount, i) => {
-          // Create a new date for each day of the week
           const currentDate = new Date(startOfWeek);
-          currentDate.setDate(startOfWeek.getDate() + i); // Adjust to the correct day of the week
+          currentDate.setDate(startOfWeek.getDate() + i);
 
           return (
             <Card key={i} className="p-0">
               <CardContent className="p-3">
-                {/* Show day of the week and the date */}
                 <h3 className="font-bold text-xl mb-2">{daysOfWeek[i]}</h3>
                 <p className="text-sm mb-2">
                   {currentDate.toLocaleDateString()}{" "}
-                  {/* Use the new currentDate */}
                 </p>
 
-                {/* WFH and In Office counts */}
                 <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
                   {" "}
-                  {/* Light green background */}
                   <h4 className="font-bold">AM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
                     {" "}
-                    {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">
@@ -716,11 +697,9 @@ export default function Component() {
 
                 <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
                   {" "}
-                  {/* Light green background */}
                   <h4 className="font-bold">PM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
                     {" "}
-                    {/* Grey line */}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
                       <p className="text-xl text-center">
@@ -761,13 +740,11 @@ export default function Component() {
         <Card className="w-full">
           <div className="mt-4">
             {" "}
-            {/* Margin bottom for spacing */}
             <div className="flex justify-center items-center">
               {" "}
-              {/* Flex container for inline alignment */}
               <label
                 htmlFor="department-select"
-                className="block text-xl font-medium mr-2 text-gray-700" // Add margin to the right for spacing
+                className="block text-xl font-medium mr-2 text-gray-700"
               >
                 Department:
               </label>
@@ -808,12 +785,10 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${
-                        months[currentDate.getMonth()]
-                      }`
-                    : `${
-                        months[currentDate.getMonth()]
-                      } ${currentDate.getFullYear()}`}{" "}
+                    ? `${currentDate.getDate()} ${months[currentDate.getMonth()]
+                    }`
+                    : `${months[currentDate.getMonth()]
+                    } ${currentDate.getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>
@@ -844,7 +819,6 @@ export default function Component() {
             <CardContent className="p-2 sm:p-4">
               <TabsContent value="day">{renderDayView()}</TabsContent>
               <TabsContent value="week">{renderWeekView()}</TabsContent>
-              {/* Month view */}
               <TabsContent value="month">
                 <div className="grid grid-cols-7 gap-0">
                   {daysOfWeek.map((day) => (
@@ -862,13 +836,6 @@ export default function Component() {
           </Tabs>
         </Card>
       </main>
-      {/* {selectedDate && (
-        <footer className="bg-white shadow-sm py-2 sm:py-4 px-4 sm: px-6 mt-4">
-          <p className="text-base sm:text-lg font-semibold">
-            Selected Date: {selectedDate.toDateString()}
-          </p>
-        </footer>
-      )} */}
     </div>
   );
 }
