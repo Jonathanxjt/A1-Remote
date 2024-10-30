@@ -38,6 +38,7 @@ export default function MyRequests() {
       const user = JSON.parse(userData);
       if (!user) {
         navigate("/login");
+        return;
       }
     }
   }, [navigate]);
@@ -542,11 +543,11 @@ export default function MyRequests() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={handleCancelConfirm}>
-              Yes, cancel it
-            </Button>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               No, keep it
+            </Button>
+            <Button onClick={handleCancelConfirm}>
+              Yes, cancel it
             </Button>
           </DialogFooter>
         </DialogContent>

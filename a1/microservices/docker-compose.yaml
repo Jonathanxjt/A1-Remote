@@ -86,6 +86,7 @@ services:
     volumes:
       - .:/usr/src/app
     environment:
+      - TZ=Asia/Singapore
       - DATABASE_URL=${DATABASE_URL}  # Pass the database URL from your .env file
     networks:
       - my_network

@@ -46,19 +46,28 @@ interface WorkRequest {
 export default function Component() {
   const navigate = useNavigate();
 
+
+    
+
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
 
-    if (userData) {
-      const user = JSON.parse(userData);
-      console.log(user);
-      if (user.role !== 1) {
-        navigate("/");
-      }
-    } else {
+    if (!userData) {
       navigate("/login");
+      return; // Exit the useEffect early if no userData
     }
+
+    const user = JSON.parse(userData);
+    console.log(user);
+
+    if (user.role !== 1) {
+      navigate("/");
+      return; // Exit the useEffect early if user role is not 1
+    }
+
   }, [navigate]);
+
+
 
 
   const [currentDate, setCurrentDate] = useState(new Date());
