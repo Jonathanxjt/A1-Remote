@@ -14,7 +14,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Employee } from "src/Models/Employee";
-import {debounce} from "lodash";
+import { debounce } from "lodash";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -35,7 +35,7 @@ const months = [
 type WorkStatus = "AM" | "PM" | "Full Day" | "Pending" | null;
 type StatusBadgeProps = {
   status: WorkStatus;
-}
+};
 
 interface WorkRequest {
   id: number;
@@ -60,6 +60,8 @@ export default function Component() {
   const [isWFHExpandedPM, setIsWFHExpandedPM] = useState(false);
   const [isInOfficeExpandedPM, setIsInOfficeExpandedPM] = useState(false);
   const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
+  const currentYear = currentDate.getFullYear();
+  const yearsRange = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i); // Range from currentYear - 1 to currentYear + 1
   const [user, setUser] = useState(() => {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
   });
@@ -82,12 +84,12 @@ export default function Component() {
     return new Date(dateStr);
   };
 
-
   // Handle day selection
 
   const handleDateSelection = (date: Date) => {
     const dayOfWeek = date.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // Skip weekends
       setSelectedDate(date);
       setCurrentDate(date);
     }
@@ -125,16 +127,19 @@ export default function Component() {
           response = {
             data: {
               code: 200,
-              data: [...ownScheduleResponse.data.data, ...teamScheduleResponse.data.data]
-            }
+              data: [
+                ...ownScheduleResponse.data.data,
+                ...teamScheduleResponse.data.data,
+              ],
+            },
           };
         } else {
           console.error("Failed to fetch schedules for manager or team.");
           response = {
             data: {
               code: 500,
-              message: "Error fetching schedules"
-            }
+              message: "Error fetching schedules",
+            },
           };
         }
       } else {
@@ -205,6 +210,7 @@ export default function Component() {
         });
         setEmployeesAM(employeesAMList);
         setEmployeesPM(employeesPMList);
+        console.log(employeesAMList);
       }
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -382,7 +388,6 @@ export default function Component() {
 
       setCurrentDate(nextDate);
       setSelectedDate(nextDate);
-
     } else if (currentView === "month") {
       // Go to the next month (first day of the month), no need to consider weekends
       const nextMonthDate = new Date(
@@ -399,25 +404,25 @@ export default function Component() {
       // Set the initial state based on the current viewport width
       return window.innerWidth >= 768;
     });
-  
+
     if (!status) return null;
-  
+
     const colorMap = {
       AM: "bg-blue-200 text-blue-800",
       PM: "bg-pink-200 text-red-800",
       "Full Day": "bg-purple-200 text-purple-800",
       Pending: "bg-yellow-200 text-yellow-800",
     };
-  
+
     const shortFormMap = {
       AM: "A",
       PM: "P",
       "Full Day": "F",
       Pending: "P",
     };
-  
+
     const displayText = isExpanded ? status : shortFormMap[status];
-  
+
     return (
       <Badge
         variant="secondary"
@@ -430,7 +435,6 @@ export default function Component() {
       </Badge>
     );
   };
-  
 
   const renderMonthView = () => {
     const days = [];
@@ -440,7 +444,7 @@ export default function Component() {
       currentDate.getMonth(),
       0
     ).getDate();
-  
+
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const day = prevMonthDays - i;
       days.push(
@@ -454,7 +458,7 @@ export default function Component() {
         </div>
       );
     }
-  
+
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(
         currentDate.getFullYear(),
@@ -469,25 +473,26 @@ export default function Component() {
           request.date.getMonth() === currentDate.getMonth() &&
           request.date.getFullYear() === currentDate.getFullYear()
       );
-  
+
       const isSelected =
         selectedDate &&
         selectedDate.getDate() === day &&
         selectedDate.getMonth() === currentDate.getMonth() &&
         selectedDate.getFullYear() === currentDate.getFullYear();
-  
+
       const isToday =
         today.getDate() === day &&
         today.getMonth() === currentDate.getMonth() &&
         today.getFullYear() === currentDate.getFullYear();
-  
+
       days.push(
         <div
           key={day}
           className={`p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] cursor-pointer transition-colors duration-200 
-            ${isWeekend
-              ? "bg-gray-300 cursor-not-allowed opacity-60"
-              : isSelected
+            ${
+              isWeekend
+                ? "bg-gray-300 cursor-not-allowed opacity-60"
+                : isSelected
                 ? "bg-blue-100"
                 : "hover:bg-gray-100"
             }`}
@@ -519,7 +524,7 @@ export default function Component() {
         </div>
       );
     }
-  
+
     const remainingDays = 7 - ((firstDayOfMonth + daysInMonth) % 7);
     if (remainingDays < 7) {
       for (let day = 1; day <= remainingDays; day++) {
@@ -535,10 +540,9 @@ export default function Component() {
         );
       }
     }
-  
+
     return days;
   };
-  
 
   const renderDayView = () => {
     const totalAMCount = employeesAM.filter(
@@ -602,8 +606,15 @@ export default function Component() {
                 {isWFHExpandedAM && (
                   <ul className="list-disc pl-5 mt-2">
                     {filteredEmployeesAM
-                      .filter((employee) => employee.status === "AM" || employee.status === "Full")
-                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .filter(
+                        (employee) =>
+                          employee.status === "AM" || employee.status === "Full"
+                      )
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
                       .map((employee) => (
                         <li key={employee.id}>{employee.fullName}</li>
                       ))}
@@ -624,7 +635,11 @@ export default function Component() {
                   <ul className="list-disc pl-5 mt-2">
                     {filteredEmployeesAM
                       .filter((employee) => employee.status === "In Office")
-                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
                       .map((employee) => (
                         <li key={employee.id}>{employee.fullName}</li>
                       ))}
@@ -669,8 +684,15 @@ export default function Component() {
                 {isWFHExpandedPM && (
                   <ul className="list-disc pl-5 mt-2">
                     {filteredEmployeesPM
-                      .filter((employee) => employee.status === "PM" || employee.status === "Full")
-                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .filter(
+                        (employee) =>
+                          employee.status === "PM" || employee.status === "Full"
+                      )
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
                       .map((employee) => (
                         <li key={employee.id}>{employee.fullName}</li>
                       ))}
@@ -691,7 +713,11 @@ export default function Component() {
                   <ul className="list-disc pl-5 mt-2">
                     {filteredEmployeesPM
                       .filter((employee) => employee.status === "In Office")
-                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
                       .map((employee) => (
                         <li key={employee.id}>{employee.fullName}</li>
                       ))}
@@ -761,11 +787,17 @@ export default function Component() {
                     {" "}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">{dayCount?.wfhCountAM}</p>
+                      <p className="text-xl text-center">
+                        {dayCount?.wfhCountAM}
+                      </p>
                     </div>
                     <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">Office:</p>
-                      <p className="text-xl text-center">{dayCount?.inOfficeCountAM}</p>
+                      <p className="text-sm text-center text-gray-500">
+                        Office:
+                      </p>
+                      <p className="text-xl text-center">
+                        {dayCount?.inOfficeCountAM}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -777,11 +809,17 @@ export default function Component() {
                     {" "}
                     <div className="flex-1 border-r border-gray-300 pr-2">
                       <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">{dayCount?.wfhCountPM}</p>
+                      <p className="text-xl text-center">
+                        {dayCount?.wfhCountPM}
+                      </p>
                     </div>
                     <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">Office:</p>
-                      <p className="text-xl text-center">{dayCount?.inOfficeCountPM}</p>
+                      <p className="text-sm text-center text-gray-500">
+                        Office:
+                      </p>
+                      <p className="text-xl text-center">
+                        {dayCount?.inOfficeCountPM}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -827,10 +865,12 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${months[currentDate.getMonth()]
-                    }`
-                    : `${months[currentDate.getMonth()]
-                    } ${currentDate.getFullYear()}`}{" "}
+                    ? `${currentDate.getDate()} ${
+                        months[currentDate.getMonth()]
+                      }`
+                    : `${
+                        months[currentDate.getMonth()]
+                      } ${currentDate.getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>
@@ -839,22 +879,28 @@ export default function Component() {
                 )}
               </div>
               <Select
-                value={currentDate.getMonth().toString()}
-                onValueChange={(value) =>
+                value={`${currentDate.getMonth()}-${currentDate.getFullYear()}`}
+                onValueChange={(value) => {
+                  const [monthIndex, year] = value.split("-");
                   setCurrentDate(
-                    new Date(currentDate.getFullYear(), parseInt(value), 1)
-                  )
-                }
+                    new Date(parseInt(year), parseInt(monthIndex), 1)
+                  );
+                }}
               >
                 <SelectTrigger className="w-[140px] sm:w-[180px]">
-                  <SelectValue placeholder="Select a month" />
+                  <SelectValue placeholder="Select a month and year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={index} value={index.toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
+                  {yearsRange.map((year) =>
+                    months.map((month, index) => (
+                      <SelectItem
+                        key={`${year}-${index}`}
+                        value={`${index}-${year}`}
+                      >
+                        {month} {year}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

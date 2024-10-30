@@ -66,51 +66,65 @@ def create_app():
     def get_team_schedules(reporting_manager):
         try:
             schedules = []
-            manager_schedule_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/schedule/{reporting_manager}/employee")
-            if manager_schedule_response.status_code == 200:
-                manager_schedule_data = manager_schedule_response.json().get("data", {}).get("work_request", [])
+            
+            # Fetch the manager's details from the employee microservice
+            manager_details_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee/{reporting_manager}")
+            if manager_details_response.status_code == 200:
+                # Flatten the manager details
+                manager_details_data = manager_details_response.json().get("data", {}).get("employee", {})
+            else:
+                return jsonify({"code": manager_details_response.status_code, "message": "Error fetching manager details."}), manager_details_response.status_code
+
+            # Directly fetch the manager's schedule from the database
+            manager_schedule = db.session.query(Schedule).filter_by(staff_id=reporting_manager).all()
+            if manager_schedule:
                 schedules.append({
-                "employee": {"staff_id": reporting_manager, "name": "Reporting Manager"},  # Customize as needed
-                "schedule": manager_schedule_data if manager_schedule_data else "No schedule found."
+                    "employee": manager_details_data,  # Flattened manager details
+                    "schedule": [s.json() for s in manager_schedule]
                 })
             else:
                 schedules.append({
-                "employee": {"staff_id": reporting_manager, "name": "Reporting Manager"},
-                "schedule": "No schedule found."
-            })
-                
+                    "employee": manager_details_data,  # Flattened manager details
+                    "schedule": "No schedule found."
+                })
+
+            # Fetch team members under the reporting manager
             employee_response = requests.get(f"{EMPLOYEE_SERVICE_URL}/employee/{reporting_manager}/team")
             if employee_response.status_code == 200:
-                team_members = employee_response.json().get("data").get("members", [])
-        
+                team_members = employee_response.json().get("data", {}).get("members", [])
+
                 if not team_members:
                     return jsonify({"code": 404, "message": "No team members found."}), 404
 
+                # Fetch schedule for each team member
                 for member in team_members:
                     staff_id = member.get("staff_id")
-                    schedule_response = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
-                    
-                    if schedule_response:
+                    team_member_schedule = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
+
+                    if team_member_schedule:
                         schedules.append({
                             "employee": member,
-                            "schedule": [s.json() for s in schedule_response]
+                            "schedule": [s.json() for s in team_member_schedule]
                         })
                     else:
                         schedules.append({
                             "employee": member,
                             "schedule": "No schedule found."
                         })
-                
+
                 return jsonify({
                     "code": 200,
                     "data": schedules
                 }), 200
-            
             else:
                 return jsonify({"code": employee_response.status_code, "message": "Error fetching team members."}), employee_response.status_code
 
         except requests.exceptions.RequestException as e:
             return jsonify({"code": 500, "message": f"Error calling employee service: {str(e)}"}), 500
+
+
+
+
         
     @app.route("/schedule/dept/<string:dept>")
     def get_dept_schedules(dept):
