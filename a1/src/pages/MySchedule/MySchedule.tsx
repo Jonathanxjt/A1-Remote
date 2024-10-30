@@ -14,6 +14,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Employee } from "src/Models/Employee";
+import {debounce} from "lodash";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -32,6 +33,9 @@ const months = [
 ];
 
 type WorkStatus = "AM" | "PM" | "Full Day" | "Pending" | null;
+type StatusBadgeProps = {
+  status: WorkStatus;
+}
 
 interface WorkRequest {
   id: number;
@@ -51,6 +55,10 @@ export default function Component() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
+  const [isWFHExpandedAM, setIsWFHExpandedAM] = useState(false);
+  const [isInOfficeExpandedAM, setIsInOfficeExpandedAM] = useState(false);
+  const [isWFHExpandedPM, setIsWFHExpandedPM] = useState(false);
+  const [isInOfficeExpandedPM, setIsInOfficeExpandedPM] = useState(false);
   const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
   const [user, setUser] = useState(() => {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
@@ -106,7 +114,7 @@ export default function Component() {
         const teamScheduleResponse = await axios.get(
           `http://localhost:5004/schedule/team/${reportingManagerId}`
         );
-      
+
         if (
           ownScheduleResponse.data.code === 200 &&
           teamScheduleResponse.data.code === 200
@@ -209,7 +217,6 @@ export default function Component() {
       const response = await axios.get(
         `http://localhost:5004/schedule/team/${reportingManagerId}`
       );
-      console.log("response", response.data.data);
       if (response.data.code === 200) {
         let wfhCountAM = 0;
         let inOfficeCountAM = 0;
@@ -387,23 +394,43 @@ export default function Component() {
     }
   };
 
-  const getStatusBadge = (status: WorkStatus) => {
+  const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+    const [isExpanded, setIsExpanded] = useState<boolean>(() => {
+      // Set the initial state based on the current viewport width
+      return window.innerWidth >= 768;
+    });
+  
     if (!status) return null;
+  
     const colorMap = {
       AM: "bg-blue-200 text-blue-800",
       PM: "bg-pink-200 text-red-800",
       "Full Day": "bg-purple-200 text-purple-800",
       Pending: "bg-yellow-200 text-yellow-800",
     };
+  
+    const shortFormMap = {
+      AM: "A",
+      PM: "P",
+      "Full Day": "F",
+      Pending: "P",
+    };
+  
+    const displayText = isExpanded ? status : shortFormMap[status];
+  
     return (
       <Badge
         variant="secondary"
-        className={`${colorMap[status]} text-xs px-1 py-0.5 rounded`}
+        className={`${colorMap[status]} 
+          text-xs sm:text-sm md:text-base 
+          px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 
+          rounded-full cursor-pointer`}
       >
-        {status}
+        {displayText}
       </Badge>
     );
   };
+  
 
   const renderMonthView = () => {
     const days = [];
@@ -413,7 +440,7 @@ export default function Component() {
       currentDate.getMonth(),
       0
     ).getDate();
-
+  
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const day = prevMonthDays - i;
       days.push(
@@ -427,7 +454,7 @@ export default function Component() {
         </div>
       );
     }
-
+  
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(
         currentDate.getFullYear(),
@@ -442,18 +469,18 @@ export default function Component() {
           request.date.getMonth() === currentDate.getMonth() &&
           request.date.getFullYear() === currentDate.getFullYear()
       );
-
+  
       const isSelected =
         selectedDate &&
         selectedDate.getDate() === day &&
         selectedDate.getMonth() === currentDate.getMonth() &&
         selectedDate.getFullYear() === currentDate.getFullYear();
-
+  
       const isToday =
         today.getDate() === day &&
         today.getMonth() === currentDate.getMonth() &&
         today.getFullYear() === currentDate.getFullYear();
-
+  
       days.push(
         <div
           key={day}
@@ -466,30 +493,33 @@ export default function Component() {
             }`}
           onClick={() => {
             if (!isWeekend) {
-              // setCurrentDate(date);
               handleDateSelection(date);
               console.log("Date selected:", date);
-              // this line below is causing the current date to be set to be one the selected date
-              // console.log("Selected date:", currentDate);
             }
           }}
         >
-          <div className="flex justify-between items-start">
+          {/* Use flex column to align items vertically */}
+          <div className="flex flex-col items-center">
             <div
-              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${isToday
-                ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
-                : ""
-                } text-sm sm:text-base`}
+              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${
+                isToday
+                  ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
+                  : ""
+              } text-sm sm:text-base`}
             >
               {day}
             </div>
-            {dayStatus && getStatusBadge(dayStatus.status)}
+            {/* Status Badge below the date */}
+            {dayStatus && (
+              <div className="mt-2">
+                <StatusBadge status={dayStatus.status} />
+              </div>
+            )}
           </div>
-          <div className="mt-1 space-y-1"></div>
         </div>
       );
     }
-
+  
     const remainingDays = 7 - ((firstDayOfMonth + daysInMonth) % 7);
     if (remainingDays < 7) {
       for (let day = 1; day <= remainingDays; day++) {
@@ -505,9 +535,10 @@ export default function Component() {
         );
       }
     }
-
+  
     return days;
   };
+  
 
   const renderDayView = () => {
     const totalAMCount = employeesAM.filter(
@@ -535,19 +566,19 @@ export default function Component() {
 
     return (
       <>
-        <div className="mt-6 flex space-x-4">
-          <div className="w-1/2 pr-2 border-r border-gray-300">
+        <div className="mt-6 flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0">
+          <div className="w-full lg:w-1/2 pr-0 lg:pr-2 border-r lg:border-r-2 border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
-            <h4 className="text-3xl font-bold">AM Status</h4>
-            <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
+            <h4 className="text-xl lg:text-3xl font-bold mt-4">AM Status</h4>
+            <div className="mt-4 flex flex-col lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
-                <h5 className="text-3xl">{totalAMCount}</h5>
-                <p className="text-sm text-gray-500">WFH</p>
+                <h5 className="text-2xl lg:text-3xl">{totalAMCount}</h5>
+                <p className="text-xs lg:text-sm text-gray-500">WFH</p>
               </div>
-              <div className="border-l border-gray-300 h-12 mx-4"></div>
+              <div className="hidden lg:block border-l border-gray-300 h-12 mx-4"></div>
               <div className="text-center flex-grow bg-green-100 p-4 rounded-md">
-                <h5 className="text-3xl">{totalAMinOfficeCount}</h5>
-                <p className="text-sm text-gray-500">In Office</p>
+                <h5 className="text-2xl lg:text-3xl">{totalAMinOfficeCount}</h5>
+                <p className="text-xs lg:text-sm text-gray-500">In Office</p>
               </div>
             </div>
             <input
@@ -557,55 +588,64 @@ export default function Component() {
               value={searchTermAM}
               onChange={(e) => setSearchTermAM(e.target.value)}
             />
-            <div className="flex space-x-4 mt-2">
-              <div className="w-1/2">
-                <h6 className="font-semibold">Working From Home:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesAM
-                    .filter(
-                      (employee) =>
-                        employee.status === "AM" || employee.status === "Full"
-                    )
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+            {/* Collapsible Working From Home Section */}
+            <div className="flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0 mt-2">
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsWFHExpandedAM(!isWFHExpandedAM)}
+                >
+                  <h6 className="font-semibold">Working From Home:</h6>
+                  <span>{isWFHExpandedAM ? "▲" : "▼"}</span>
+                </button>
+                {isWFHExpandedAM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesAM
+                      .filter((employee) => employee.status === "AM" || employee.status === "Full")
+                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
-              <div className="w-1/2">
-                <h6 className="font-semibold">In Office:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesAM
-                    .filter((employee) => employee.status === "In Office")
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+              {/* Collapsible In Office Section */}
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsInOfficeExpandedAM(!isInOfficeExpandedAM)}
+                >
+                  <h6 className="font-semibold">In Office:</h6>
+                  <span>{isInOfficeExpandedAM ? "▲" : "▼"}</span>
+                </button>
+                {isInOfficeExpandedAM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesAM
+                      .filter((employee) => employee.status === "In Office")
+                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="w-1/2">
+          <div className="w-full lg:w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
-            <h4 className="text-3xl font-bold">PM Status</h4>
-            <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
+            <h4 className="text-xl lg:text-3xl font-bold mt-4">PM Status</h4>
+            <div className="mt-4 flex flex-col lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
-                <h5 className="text-3xl">{totalPMCount}</h5>
-                <p className="text-sm text-gray-500">WFH</p>
+                <h5 className="text-2xl lg:text-3xl">{totalPMCount}</h5>
+                <p className="text-xs lg:text-sm text-gray-500">WFH</p>
               </div>
-              <div className="border-l border-gray-300 h-12 mx-4"></div>
+              <div className="hidden lg:block border-l border-gray-300 h-12 mx-4"></div>
               <div className="text-center flex-grow bg-green-100 p-4 rounded-md">
-                <h5 className="text-3xl">{totalPMinOfficeCount}</h5>
-                <p className="text-sm text-gray-500">In Office</p>
+                <h5 className="text-2xl lg:text-3xl">{totalPMinOfficeCount}</h5>
+                <p className="text-xs lg:text-sm text-gray-500">In Office</p>
               </div>
             </div>
             <input
@@ -615,44 +655,52 @@ export default function Component() {
               value={searchTermPM}
               onChange={(e) => setSearchTermPM(e.target.value)}
             />
-            <div className="flex space-x-4 mt-2">
-              <div className="w-1/2">
-                <h6 className="font-semibold">Working From Home:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesPM
-                    .filter(
-                      (employee) =>
-                        employee.status === "PM" || employee.status === "Full"
-                    )
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+            {/* Collapsible Working From Home Section */}
+            <div className="flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0 mt-2">
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsWFHExpandedPM(!isWFHExpandedPM)}
+                >
+                  <h6 className="font-semibold">Working From Home:</h6>
+                  <span>{isWFHExpandedPM ? "▲" : "▼"}</span>
+                </button>
+                {isWFHExpandedPM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesPM
+                      .filter((employee) => employee.status === "PM" || employee.status === "Full")
+                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
-              <div className="w-1/2">
-                <h6 className="font-semibold">In Office:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesPM
-                    .filter((employee) => employee.status === "In Office")
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+              {/* Collapsible In Office Section */}
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsInOfficeExpandedPM(!isInOfficeExpandedPM)}
+                >
+                  <h6 className="font-semibold">In Office:</h6>
+                  <span>{isInOfficeExpandedPM ? "▲" : "▼"}</span>
+                </button>
+                {isInOfficeExpandedPM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesPM
+                      .filter((employee) => employee.status === "In Office")
+                      .sort((a, b) => a.fullName.split(" ")[1].localeCompare(b.fullName.split(" ")[1]))
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </>
     );
   };

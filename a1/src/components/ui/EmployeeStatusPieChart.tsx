@@ -41,6 +41,7 @@ const EmployeeStatusPieChart: React.FC<EmployeeStatusPieChartProps> =
         width: "100%",
         height: 400,
       },
+      responsive: true,
       series: {
         radiusRange: ["40%", "100%"],
         showLabel: true,
