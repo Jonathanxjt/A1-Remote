@@ -1,4 +1,6 @@
 #!/bin/bash
+# Ensure timezone is set
+export TZ=Asia/Singapore
 
 # Start the cron service
 service cron start

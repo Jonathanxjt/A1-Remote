@@ -4,7 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Footer from "./components/footer.tsx";
-import NotificationPolling from "./components/NotificationPolling.js";
+import NotificationSocket from "./components/NotificationSocket.js";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";
 import Login from "./pages/Login/Login"; // Ensure Login is imported here
@@ -15,10 +15,11 @@ import MySchedule from "./pages/MySchedule/MySchedule";
 import NotFound from "./pages/NotFound";
 import RequestPage from "./pages/RequestPage/RequestPage.tsx";
 import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
-import NotificationSocket from "./components/NotificationSocket.js";
+import { useNavigate } from "react-router-dom";
 
 const App: React.FC = () => {
   const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();  
   // Update notification count based on unread notifications
   const notificationCount = notifications.length;
 
@@ -47,6 +48,10 @@ const App: React.FC = () => {
     if (id) {
       setStaffId(id); // Set staff ID if available
     }
+    else
+    {
+      navigate("/login");
+    }
     // Listen for storage changes (e.g., login/logout across tabs)
     window.addEventListener("storage", handleStorageChange);
 
@@ -59,7 +64,7 @@ const App: React.FC = () => {
   return (
     <div className="maincontainer">
       {/* ensures that the sidebar does not cover the main-content */}
-      <Sidebar notifications={notifications}  onLogout={handleLogout} />
+      <Sidebar notifications={notifications} onLogout={handleLogout} />
       <div className="main-content">
         {/* Conditionally render NotificationWebSocket only when logged in */}
         {staffId && (
@@ -85,7 +90,15 @@ const App: React.FC = () => {
           {/* ManageRequests route */}
           <Route path="/MyRequests" element={<MyRequests />} />{" "}
           {/* MyRequests route */}
-          <Route path="/Mailbox"  element={<Mailbox notifications={notifications} setNotifications={setNotifications} />} />
+          <Route
+            path="/Mailbox"
+            element={
+              <Mailbox
+                notifications={notifications}
+                setNotifications={setNotifications}
+              />
+            }
+          />
           <Route path="*" element={<NotFound />} /> {/* 404 route */}
         </Routes>
 

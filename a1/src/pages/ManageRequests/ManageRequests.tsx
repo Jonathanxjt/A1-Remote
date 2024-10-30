@@ -64,9 +64,11 @@ export default function WorkFromHomeRequests() {
       console.log(user);
       if (user.role !== 1 && user.role !== 3) {
         navigate("/");
+        return;
       }
     } else {
       navigate("/login");
+      return;
     }
   }, [navigate]);
 
@@ -864,14 +866,14 @@ export default function WorkFromHomeRequests() {
             />
           </div>
           <DialogFooter className="mt-4">
+            <Button onClick={closeActionModal} variant="outline">
+              Cancel
+            </Button>
             <Button
               onClick={handleActionWithComment}
               disabled={!actionComment.trim()}
             >
               {actionType === "reject" ? "Reject" : "Revoke"}
-            </Button>
-            <Button onClick={closeActionModal} variant="outline">
-              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

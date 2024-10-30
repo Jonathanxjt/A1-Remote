@@ -1,11 +1,13 @@
 # Start with your base image
 FROM python:3-slim
 
-# Install necessary packages
+# Install necessary packages and set timezone
 RUN apt-get update && \
-    apt-get install -y procps cron && \
+    apt-get install -y procps cron tzdata && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    ln -fs /usr/share/zoneinfo/Asia/Singapore /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
 
 # Create work directory
 WORKDIR /usr/src/app
@@ -27,8 +29,8 @@ RUN touch /var/log/auto_reject.log && \
 RUN chmod +x /usr/src/app/autoreject.py && \
     chmod +x /usr/src/app/entrypoint.sh
 
-# Set up cron job to run every minute and log its execution
-RUN echo "0 0 * * * /usr/local/bin/python /usr/src/app/autoreject.py >> /var/log/auto_reject.log 2>&1\n# This extra line is required for cron to work\n" > /etc/cron.d/autoreject-cron && \
+# Set up cron job with CRON_TZ
+RUN echo "CRON_TZ=Asia/Singapore\n0 0 * * * /usr/local/bin/python /usr/src/app/autoreject.py >> /var/log/auto_reject.log 2>&1\n# This extra line is required for cron to work\n" > /etc/cron.d/autoreject-cron && \
     chmod 0644 /etc/cron.d/autoreject-cron && \
     crontab /etc/cron.d/autoreject-cron
 
