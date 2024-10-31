@@ -48,15 +48,19 @@ jobs:
     - name: SSH into EC2, pull changes, run tests, and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
-        # Step 1: Navigate to A1-Remote, pull latest changes, and run integration tests
+        # Step 1: Navigate to A1-Remote, pull latest changes, and install dependencies
         cd A1-Remote &&
         git pull origin main &&
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
         
-        # Run integration tests
-        if coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v; then
+        # Run coverage and integration tests
+        coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
+        coverage xml
+    
+        # Check if the tests passed and proceed to deployment if successful
+        if [ $? -eq 0 ]; then
           echo "Integration tests passed. Proceeding with deployment."
           
           # Step 2: Run deploy.sh to deploy the application if tests pass
