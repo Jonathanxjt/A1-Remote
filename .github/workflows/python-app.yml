@@ -55,6 +55,18 @@ jobs:
         source venv/bin/activate &&
         pip install -r requirements.txt &&
         
+        # Step 2: Stop containers and wait for them to fully shut down
+        cd a1/microservices &&
+        docker-compose down &&
+        
+        # Wait until all containers are fully down
+        while [ "$(docker ps -q)" ]; do
+          echo "Waiting for containers to stop..."
+          sleep 2  # Check every 2 seconds
+        done
+        
+        echo "All containers are down. Running integration tests."
+        
         # Run coverage and integration tests
         coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
         coverage xml
@@ -63,7 +75,7 @@ jobs:
         if [ $? -eq 0 ]; then
           echo "Integration tests passed. Proceeding with deployment."
           
-          # Step 2: Run deploy.sh located in /home/ec2-user if tests pass
+          # Step 3: Run deploy.sh located in /home/ec2-user if tests pass
           cd /home/ec2-user &&  # Go to /home/ec2-user directory
           chmod +x deploy.sh &&
           bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
