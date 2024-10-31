@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 import os
 import requests
 
-# db = SQLAlchemy()
 EMPLOYEE_SERVICE_URL = "http://employee:5002"
 
 def create_app():

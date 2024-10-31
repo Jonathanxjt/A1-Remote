@@ -14,65 +14,74 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout the repository
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Step 2: Set up Python 3.12 on GitHub-hosted runner
     - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
         python-version: "3.12"
 
-    # Step 3: Install dependencies (for linting and unit testing)
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # Step 4: Lint the code
     - name: Lint with flake8
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    # Step 5: Run unit tests with pytest (on GitHub-hosted runner)
     - name: Run unit tests with pytest
       run: |
         pytest a1/tests/unit --maxfail=1 --disable-warnings -v
     
-    # Step 7: Add SSH private key from GitHub Secrets to SSH agent
     - name: Add SSH key
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-    # Step 8: Export AWS RDS URL (optional if you want to use this in EC2)
     - name: Export AWS RDS URL
       run: echo "AWS_URL=${{ secrets.AWS_URL }}" >> $GITHUB_ENV
 
-    # Step 9: SSH into EC2 using the Elastic IP from GitHub Secrets and run integration tests
-    - name: SSH into EC2 and run integration tests
+    - name: SSH into EC2, pull changes, run tests, and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
+        # Step 1: Navigate to A1-Remote, pull latest changes, and install dependencies
         cd A1-Remote &&
         git pull origin main &&
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
+        
+        # Step 2: Stop containers and wait for them to fully shut down
+        cd a1/microservices &&
+        docker-compose down &&
+        
+        # Wait until all containers are fully down
+        while [ "$(docker ps -q)" ]; do
+          echo "Waiting for containers to stop..."
+          sleep 2  # Check every 2 seconds
+        done
+        
+        echo "All containers are down. Running integration tests."
+        
+        # Run coverage and integration tests
+        cd ../.. &&
         coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
         coverage xml
+    
+        # Check if the tests passed and proceed to deployment if successful
+        if [ $? -eq 0 ]; then
+          echo "Integration tests passed. Proceeding with deployment."
+          
+          # Step 3: Run deploy.sh located in /home/ec2-user if tests pass
+          cd /home/ec2-user &&  # Go to /home/ec2-user directory
+          chmod +x deploy.sh &&
+          bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
+        else
+          echo "Integration tests failed. Deployment aborted."
+          exit 1
+        fi
         '
-
-    # Optionally, copy coverage report from EC2 to GitHub Actions
-    # - name: Copy coverage report from EC2 to GitHub Actions
-    #   run: |
-    #     scp -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }}:/A1-Remote/a1/.coverage ./
-
-    # - name: Show test coverage
-    #   run: |
-    #     coverage run -m pytest a1/tests/unit --maxfail=1 --disable-warnings -v
-    #     coverage combine  # Combine coverage data from both unit and integration tests
-    #     coverage report
-    #     coverage xml
