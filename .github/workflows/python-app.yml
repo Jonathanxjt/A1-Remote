@@ -45,16 +45,26 @@ jobs:
     - name: Export AWS RDS URL
       run: echo "AWS_URL=${{ secrets.AWS_URL }}" >> $GITHUB_ENV
 
-    - name: SSH into EC2, deploy, and run tests
+    - name: SSH into EC2, pull changes, run tests, and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
+        # Step 1: Navigate to A1-Remote, pull latest changes, and run integration tests
         cd A1-Remote &&
         git pull origin main &&
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r requirements.txt &&
-        chmod +x deploy.sh &&  # Make deploy.sh executable
-        bash -x ./deploy.sh &&  # Run deploy.sh with debug output to show each command step
-        coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
-        coverage xml
+        
+        # Run integration tests
+        if coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v; then
+          echo "Integration tests passed. Proceeding with deployment."
+          
+          # Step 2: Run deploy.sh to deploy the application if tests pass
+          cd / &&  # Go to root to execute deploy.sh
+          chmod +x deploy.sh &&
+          bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
+        else
+          echo "Integration tests failed. Deployment aborted."
+          exit 1
+        fi
         '
