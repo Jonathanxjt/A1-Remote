@@ -63,8 +63,8 @@ jobs:
         if [ $? -eq 0 ]; then
           echo "Integration tests passed. Proceeding with deployment."
           
-          # Step 2: Run deploy.sh to deploy the application if tests pass
-          cd / &&  # Go to root to execute deploy.sh
+          # Step 2: Run deploy.sh located in /home/ec2-user if tests pass
+          cd /home/ec2-user &&  # Go to /home/ec2-user directory
           chmod +x deploy.sh &&
           bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
         else
