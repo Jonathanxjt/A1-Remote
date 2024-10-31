@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from flask_socketio import SocketIO, emit, join_room
 import os
 
+
+
 def create_app():
     app = Flask(__name__)
     load_dotenv()
@@ -237,9 +239,6 @@ def handle_disconnect():
     print('Client disconnected')
 
 
-
-
-
 if __name__ == '__main__':
     socketio.run(
         app,
@@ -249,3 +248,4 @@ if __name__ == '__main__':
         use_reloader=False,
         allow_unsafe_werkzeug=True
     )
+

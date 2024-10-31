@@ -4,6 +4,7 @@ from datetime import datetime
 import sys
 import os
 from sqlalchemy import inspect
+from flask_socketio import SocketIOTestClient
 from unittest.mock import patch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../microservices')))
 
@@ -82,21 +83,203 @@ def test_create_notification_success(client):
     assert len(data['data']) >= 1
     assert data['message'] == "Notification(s) created successfully"
 
-# # Test POST /notification/create_notification - Missing required fields
-# def test_create_notification_missing_fields(client):
-#     client, employee, manager, work_request, notification1, notification2 = client
+# Test POST /notification/create_notification - Missing required fields
+def test_create_notification_missing_fields(client):
+    client, employee, manager, work_request, notification1, notification2 = client
     
-#     incomplete_data = {
-#         'sender_id': manager.staff_id,
-#         'receiver_id': employee.staff_id
-#         # Missing required fields
-#     }
+    incomplete_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id
+        # Missing required fields
+    }
     
-#     response = client.post('/notification/create_notification', 
-#                           json=incomplete_data,
-#                           content_type='application/json')
-#     data = json.loads(response.data)
+    response = client.post('/notification/create_notification', 
+                          json=incomplete_data,
+                          content_type='application/json')
+    data = json.loads(response.data)
     
-#     assert response.status_code == 400
-#     assert data['code'] == 400
-#     assert data['message'] == "Missing required fields"
+    assert response.status_code == 400
+    assert data['code'] == 400
+    assert data['message'] == "Missing required fields"
+
+
+# Test POST /notification/create_notification - Invalid date format
+def test_create_notification_invalid_date(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'Pending',
+        'request_date': 'invalid-date'
+    }
+    
+    response = client.post('/notification/create_notification', 
+                          json=notification_data,
+                          content_type='application/json')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 400
+    assert data['code'] == 400
+    assert data['message'] == "Invalid date format for request_date"
+
+# Test POST /notification/create_notification - Invalid status
+def test_create_notification_invalid_status(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'InvalidStatus',
+        'request_date': '2025-10-17'
+    }
+    
+    response = client.post('/notification/create_notification', 
+                          json=notification_data,
+                          content_type='application/json')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 400
+    assert data['code'] == 400
+    assert data['message'] == "Invalid status provided"
+
+# Test PUT /notification/read_notification/<int:notification_id>
+def test_read_notification_success(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    response = client.put(f'/notification/read_notification/{notification1.notification_id}')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 200
+    assert data['code'] == 200
+    assert data['message'] == "Notification updated successfully."
+    assert data['data']['is_read'] == True
+
+# Test PUT /notification/read_notification/<int:notification_id> - Not found
+def test_read_notification_not_found(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    response = client.put('/notification/read_notification/99999')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 404
+    assert data['code'] == 404
+    assert data['message'] == "Notification not found."
+
+# Test DELETE /notification/delete_notification/<int:notification_id>
+def test_delete_notification_success(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    response = client.delete(f'/notification/delete_notification/{notification1.notification_id}')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 200
+    assert data['code'] == 200
+    assert data['message'] == "Notification deleted successfully."
+
+# Test DELETE /notification/delete_notification/<int:notification_id> - Not found
+def test_delete_notification_not_found(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    response = client.delete('/notification/delete_notification/99999')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 404
+    assert data['code'] == 404
+    assert data['message'] == "Notification not found."
+
+
+# Test special case - Create notification with exceed flag
+def test_create_notification_with_exceed(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'Pending',
+        'request_date': '2025-10-17',
+        'exceed': True
+    }
+    
+    response = client.post('/notification/create_notification', 
+                          json=notification_data,
+                          content_type='application/json')
+    data = json.loads(response.data)
+    
+    assert response.status_code == 201
+    assert data['code'] == 201
+    assert len(data['data']) > 1  # Should have both regular and exceed notifications
+    assert any("exceeded 2 WFH requests" in notif['message'] for notif in data['data'])
+
+# Test create_notification with an exception on db.session.commit()
+def test_create_notification_commit_exception(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'Pending',
+        'request_date': '2025-10-17'
+    }
+    
+    # Simulate a commit exception
+    with patch('notification.db.session.commit', side_effect=Exception("Commit failed")):
+        response = client.post('/notification/create_notification', json=notification_data)
+        data = json.loads(response.data)
+        
+        assert response.status_code == 500
+        assert data['code'] == 500
+        assert "An error occurred" in data['message']
+
+# Test read_notification where db.session.commit() raises an exception
+def test_read_notification_commit_exception(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    with patch('notification.db.session.commit', side_effect=Exception("Commit failed")):
+        response = client.put(f'/notification/read_notification/{notification1.notification_id}')
+        data = json.loads(response.data)
+        
+        assert response.status_code == 500
+        assert data['code'] == 500
+        assert "An error occurred" in data['message']
+
+# Test delete_notification with exception on db.session.commit()
+def test_delete_notification_commit_exception(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    # Simulate a commit exception during deletion
+    with patch('notification.db.session.commit', side_effect=Exception("Commit failed")):
+        response = client.delete(f'/notification/delete_notification/{notification1.notification_id}')
+        data = json.loads(response.data)
+        
+        assert response.status_code == 500
+        assert data['code'] == 500
+        assert "An error occurred" in data['message']
+
+# Test create_notification with missing request_date
+def test_create_notification_missing_request_date(client):
+    client, employee, manager, work_request, notification1, notification2 = client
+    
+    # Missing the 'request_date' field
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'Pending'
+    }
+    
+    response = client.post('/notification/create_notification', json=notification_data)
+    data = json.loads(response.data)
+    
+    assert response.status_code == 500
+    assert data['code'] == 500
+    assert "An error occurred" in data['message']
