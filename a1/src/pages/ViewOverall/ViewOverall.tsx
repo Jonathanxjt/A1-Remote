@@ -48,7 +48,7 @@ export default function Component() {
   }, [navigate]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState("month");
+  const [currentView, setCurrentView] = useState("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState("All");

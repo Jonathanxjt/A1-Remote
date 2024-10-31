@@ -37,8 +37,6 @@ def create_app():
         )
 
 
-
-
     @app.route("/notification/create_notification", methods=['POST'])
     def create_notification():
         try:

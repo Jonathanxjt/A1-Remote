@@ -323,6 +323,10 @@ export default function WorkFromHomeForm() {
                 to proceed?
               </p>
               <div className="flex justify-end space-x-4">
+  
+                <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+                  Cancel
+                </Button>
                 <Button
                   onClick={() => {
                     setShowConfirmation(false);
@@ -330,9 +334,6 @@ export default function WorkFromHomeForm() {
                   }}
                 >
                   Proceed
-                </Button>
-                <Button onClick={() => setShowConfirmation(false)}>
-                  Cancel
                 </Button>
               </div>
             </div>

@@ -46,7 +46,10 @@ def client():
         db.session.add(notification2)
         db.session.flush()
 
+        
+
         yield client, employee, manager, work_request, notification1, notification2
+        db.session.rollback()
         db.session.remove()
 
 # Test GET /notification/<int:receiver_id>
@@ -82,6 +85,7 @@ def test_get_staff_notifications(client):
 #     assert data['code'] == 201
 #     assert len(data['data']) >= db.session.query(Notification).filter_by(receiver_id=employee.staff_id).count()
 #     assert data['message'] == "Notification(s) created successfully"
+
 
 # Test POST /notification/create_notification - Missing required fields
 def test_create_notification_missing_fields(client):
@@ -159,6 +163,8 @@ def test_read_notification_success(client):
     assert data['message'] == "Notification updated successfully."
     assert data['data']['is_read'] == True
 
+
+
 # Test PUT /notification/read_notification/<int:notification_id> - Not found
 def test_read_notification_not_found(client):
     client, employee, manager, work_request, notification1, notification2 = client
@@ -180,6 +186,8 @@ def test_delete_notification_success(client):
     assert response.status_code == 200
     assert data['code'] == 200
     assert data['message'] == "Notification deleted successfully."
+
+
 
 # Test DELETE /notification/delete_notification/<int:notification_id> - Not found
 def test_delete_notification_not_found(client):
@@ -283,3 +291,7 @@ def test_create_notification_missing_request_date(client):
     assert response.status_code == 500
     assert data['code'] == 500
     assert "An error occurred" in data['message']
+
+    # Cleanup: delete all notifications sent by the manager
+    db.session.query(Notification).filter_by(sender_id=manager.staff_id).delete()
+    db.session.commit()
