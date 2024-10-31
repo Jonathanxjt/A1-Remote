@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import EmployeeStatusPieChart from "@/components/ui/EmployeeStatusPieChart";
@@ -13,8 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Employee } from "src/Models/Employee";
 import { useNavigate } from "react-router-dom";
+import { Employee } from "src/Models/Employee";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -32,23 +31,8 @@ const months = [
   "December",
 ];
 
-type WorkStatus = "AM" | "PM" | "Full Day" | "Pending" | null;
-
-interface WorkRequest {
-  id: number;
-  date: Date;
-  title: string;
-  type: WorkStatus;
-  status: WorkStatus;
-  reportingManager: string;
-}
-
 export default function Component() {
   const navigate = useNavigate();
-
-
-    
-
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
 
@@ -56,114 +40,100 @@ export default function Component() {
       navigate("/login");
       return; // Exit the useEffect early if no userData
     }
-
     const user = JSON.parse(userData);
-    console.log(user);
-
     if (user.role !== 1) {
       navigate("/");
       return; // Exit the useEffect early if user role is not 1
     }
-
   }, [navigate]);
-
-
-
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [workRequests, setWorkRequests] = useState<WorkRequest[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState("All");
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
   const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
-  const [user, setUser] = useState(() => {
-    return JSON.parse(sessionStorage.getItem("user") || "{}");
-  });
-
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
       setDayLoading(true);
-      await fetchEmployeesInDepartmentDayView(); // Wait for the fetch to complete
+      await fetchEmployeesInDeptDayView(); // Wait for the fetch to complete
       setDayLoading(false); // Set loading state to false after fetch completes
     };
     fetchData();
   }, [selectedDepartment, currentDate]);
 
-  const parseDate = (dateStr: string): Date => {
-    return new Date(dateStr);
+  useEffect(() => {
+    const handleResize = () => {
+      window.location.reload(); // Refresh page on resize
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  const handleDateSelection = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      setSelectedDate(date);
+      setCurrentDate(date);
+    }
+  };
+  const isSameDay = (date1: Date, date2: Date): boolean => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
   };
 
-  const fetchEmployeesUnderManagerWeekView = async (date: Date) => {
+  const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
       const endpoint =
         selectedDepartment === "All"
           ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
           : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
-      console.log("Endpoint:", endpoint);
       const response = await axios.get(endpoint);
-
       if (response.data.code === 200) {
         let wfhCountAM = 0;
         let inOfficeCountAM = 0;
         let wfhCountPM = 0;
         let inOfficeCountPM = 0;
 
-        // Format the input date to 'YYYY-MM-DD'
-        const formattedDate = date.toISOString().split("T")[0];
-
         response.data.data.forEach((item: any) => {
           const schedule = item.schedule;
-
           if (!schedule || schedule === "No schedule found.") {
-            inOfficeCountAM += 1;
-            inOfficeCountPM += 1;
+            inOfficeCountAM++;
+            inOfficeCountPM++;
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              const scheduleDate = new Date(s.date).toISOString().split("T")[0];
-
-              return scheduleDate === formattedDate;
+              const scheduleDate = new Date(s.date);
+              return isSameDay(scheduleDate, date);
             });
 
-            const hasAM = todaySchedule.some(
-              (s: any) => s.request_type === "AM" && s.status === "Approved"
-            );
-            const hasPM = todaySchedule.some(
-              (s: any) => s.request_type === "PM" && s.status === "Approved"
-            );
-            const isFullDay = todaySchedule.some(
-              (s: any) =>
-                s.request_type === "Full Day" && s.status === "Approved"
-            );
-
-            // Increment counters based on schedule
-            if (hasAM) {
-              wfhCountAM++; // Employee is WFH for AM
-            } else {
-              inOfficeCountAM++; // Employee is in office for AM
-            }
-
-            if (hasPM) {
-              wfhCountPM++; // Employee is WFH for PM
-            } else {
-              inOfficeCountPM++; // Employee is in office for PM
-            }
-
-            // If they have a full day schedule, increment both counts
-            if (isFullDay) {
+            if (todaySchedule.some((s: any) => s.request_type === "Full Day" && s.status === "Approved")) {
               wfhCountAM++;
               wfhCountPM++;
-            }
+            } else {
+              if (todaySchedule.some((s: any) => s.request_type === "AM" && s.status === "Approved")) {
+                wfhCountAM++; // Employee is WFH for AM
+              } else {
+                inOfficeCountAM++; // Employee is in office for AM
+              }
+            
+              if (todaySchedule.some((s: any) => s.request_type === "PM" && s.status === "Approved")) {
+                wfhCountPM++; // Employee is WFH for PM
+              } else {
+                inOfficeCountPM++; // Employee is in office for PM
+              }
+            }         
           }
         });
-
         return {
           wfhCountAM,
           inOfficeCountAM,
@@ -182,13 +152,12 @@ export default function Component() {
     }
   };
 
-  const fetchEmployeesInDepartmentDayView = async () => {
+  const fetchEmployeesInDeptDayView = async () => {
     try {
       const endpoint =
         selectedDepartment === "All"
-          ? `http://localhost:5004/schedule/all` // Change to employee endpoint when 'All' is selected
-          : `http://localhost:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
-      console.log("Endpoint:", endpoint);
+          ? `http://localhost:5004/schedule/all`
+          : `http://localhost:5004/schedule/dept/${selectedDepartment}`;
       const response = await axios.get(endpoint);
 
       if (response.data.code === 200) {
@@ -212,10 +181,8 @@ export default function Component() {
             employeesPMList.push(employeeData);
           } else {
             const todaySchedule = schedule.filter((s: any) => {
-              const scheduleDate = new Date(s.date).toISOString().split("T")[0];
-              const currentDateString = currentDate.toISOString().split("T")[0];
-              console.log("Current date:", currentDateString);
-              return scheduleDate === currentDateString;
+              const scheduleDate = new Date(s.date);
+              return isSameDay(scheduleDate, currentDate);
             });
 
             const hasAM = todaySchedule.some(
@@ -261,36 +228,6 @@ export default function Component() {
   };
 
   useEffect(() => {
-    const fetchWorkRequests = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5004/schedule/${user.staff_id}/employee`
-        );
-        if (response.data.code === 200) {
-          const requests = response.data.data.work_request
-            .filter(
-              (request: any) =>
-                request.status === "Approved" || request.status === "Pending"
-            )
-            .map((request: any) => ({
-              id: request.request_id,
-              date: parseDate(request.date),
-              type: request.request_type as WorkStatus,
-              status:
-                request.status === "Pending"
-                  ? "Pending"
-                  : (request.request_type as WorkStatus),
-              reportingManager: request.reporting_manager || "Unknown",
-            }));
-          setWorkRequests(requests);
-        } else {
-          console.log("No work requests found.");
-        }
-      } catch (error) {
-        console.error("Error fetching work requests:", error);
-      }
-    };
-    fetchWorkRequests();
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
@@ -310,23 +247,17 @@ export default function Component() {
 
   const prev = () => {
     if (currentView === "day") {
-      // Go to the previous day
-      let previousDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
-      previousDate.setDate(previousDate.getDate() - 1); // Subtract one day
+      let previousDate = new Date(currentDate); 
+      previousDate.setDate(previousDate.getDate() - 1); 
 
-      // Skip weekends (Saturday and Sunday)
       const dayOfWeek = previousDate.getDay();
       if (dayOfWeek === 0) {
-        // If it's Sunday, move to Friday
         previousDate.setDate(previousDate.getDate() - 2);
       } else if (dayOfWeek === 6) {
-        // If it's Saturday, move to Friday
         previousDate.setDate(previousDate.getDate() - 1);
       }
-
       setCurrentDate(previousDate);
     } else if (currentView === "month") {
-      // Go to the previous month (first day of the month), no need to consider weekends
       const previousMonthDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - 1,
@@ -338,23 +269,17 @@ export default function Component() {
 
   const next = () => {
     if (currentView === "day") {
-      // Go to the next day
-      let nextDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
-      nextDate.setDate(nextDate.getDate() + 1); // Add one day
-
-      // Skip weekends (Saturday and Sunday)
+      let nextDate = new Date(currentDate); 
+      nextDate.setDate(nextDate.getDate() + 1); 
       const dayOfWeek = nextDate.getDay();
       if (dayOfWeek === 6) {
-        // If it's Saturday, move to Monday
         nextDate.setDate(nextDate.getDate() + 2);
       } else if (dayOfWeek === 0) {
-        // If it's Sunday, move to Monday
         nextDate.setDate(nextDate.getDate() + 1);
       }
-
       setCurrentDate(nextDate);
+      setSelectedDate(nextDate);
     } else if (currentView === "month") {
-      // Go to the next month (first day of the month), no need to consider weekends
       const nextMonthDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() + 1,
@@ -362,23 +287,6 @@ export default function Component() {
       );
       setCurrentDate(nextMonthDate);
     }
-  };
-
-  const getStatusBadge = (status: WorkStatus) => {
-    if (!status) return null;
-    const colorMap = {
-      AM: "bg-green-500",
-      PM: "bg-green-500",
-      "Full Day": "bg-green-500",
-      Pending: "bg-yellow-500",
-    };
-    return (
-      <Badge
-        className={`${colorMap[status]} text-white text-xs px-1 py-0.5 rounded`}
-      >
-        {status}
-      </Badge>
-    );
   };
 
   const renderMonthView = () => {
@@ -412,13 +320,6 @@ export default function Component() {
       );
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const dayStatus = workRequests.find(
-        (request) =>
-          request.date.getDate() === day &&
-          request.date.getMonth() === currentDate.getMonth() &&
-          request.date.getFullYear() === currentDate.getFullYear()
-      );
-
       const isSelected =
         selectedDate &&
         selectedDate.getDate() === day &&
@@ -434,32 +335,30 @@ export default function Component() {
         <div
           key={day}
           className={`p-1 sm:p-2 border border-gray-200 min-h-[60px] sm:min-h-[100px] cursor-pointer transition-colors duration-200 
-            ${isWeekend
-              ? "bg-gray-300 cursor-not-allowed opacity-60"
-              : isSelected
+            ${
+              isWeekend
+                ? "bg-gray-300 cursor-not-allowed opacity-60"
+                : isSelected
                 ? "bg-blue-100"
                 : "hover:bg-gray-100"
             }`}
           onClick={() => {
             if (!isWeekend) {
-              setSelectedDate(date);
-              console.log("actual clicked date:", date);
-              console.log("Selected date:", selectedDate);
-              // this line below is causing the current date to be set to be one the selected date
-              // console.log("Selected date:", currentDate);
+              handleDateSelection(date);
+              console.log("Date selected:", date);
             }
           }}
         >
           <div className="flex justify-between items-start">
             <div
-              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${isToday
-                ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
-                : ""
-                } text-sm sm:text-base`}
+              className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${
+                isToday
+                  ? "rounded-full bg-zinc-950 text-white w-6 h-6 flex items-center justify-center"
+                  : ""
+              } text-sm sm:text-base`}
             >
               {day}
             </div>
-            {dayStatus && getStatusBadge(dayStatus.status)}
           </div>
           <div className="mt-1 space-y-1"></div>
         </div>
@@ -496,12 +395,35 @@ export default function Component() {
     const totalPMinOfficeCount = employeesPM.length - totalPMCount;
     const [searchTermAM, setSearchTermAM] = useState("");
     const [searchTermPM, setSearchTermPM] = useState("");
+    const [isWFHExpandedAM, setIsWFHExpandedAM] = useState(false);
+    const [isInOfficeExpandedAM, setIsInOfficeExpandedAM] = useState(false);
+    const [isWFHExpandedPM, setIsWFHExpandedPM] = useState(false);
+    const [isInOfficeExpandedPM, setIsInOfficeExpandedPM] = useState(false);
+
     const filteredEmployeesAM = employeesAM.filter((employee) =>
       employee.fullName.toLowerCase().includes(searchTermAM.toLowerCase())
     );
     const filteredEmployeesPM = employeesPM.filter((employee) =>
       employee.fullName.toLowerCase().includes(searchTermPM.toLowerCase())
     );
+
+    useEffect(() => {
+      if (searchTermAM) {
+        setIsWFHExpandedAM(true);
+        setIsInOfficeExpandedAM(true);
+      } else {
+        setIsWFHExpandedAM(false);
+        setIsInOfficeExpandedAM(false);
+      }
+
+      if (searchTermPM) {
+        setIsWFHExpandedPM(true);
+        setIsInOfficeExpandedPM(true);
+      } else {
+        setIsWFHExpandedPM(false);
+        setIsInOfficeExpandedPM(false);
+      }
+    }, [searchTermAM, searchTermPM]);
 
     if (dayLoading) {
       return <div>Loading...</div>;
@@ -510,7 +432,7 @@ export default function Component() {
     return (
       <>
         <div className="mt-6 flex space-x-4">
-          <div className="w-1/2 pr-2 border-r border-gray-300">
+          <div className="w-1/2 pr-4 border-r border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
             <h4 className="text-3xl font-bold">AM Status</h4>
             <div className="mt-4 flex justify-evenly items-center border border-gray-300 rounded-lg p-4">
@@ -532,39 +454,58 @@ export default function Component() {
               onChange={(e) => setSearchTermAM(e.target.value)}
             />
 
-            <div className="flex space-x-4 mt-2">
-              <div className="w-1/2">
-                <h6 className="font-semibold">Working From Home:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesAM
-                    .filter(
-                      (employee) =>
-                        employee.status === "AM" || employee.status === "Full"
-                    )
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+            {/* Collapsible Working From Home Section */}
+            <div className="flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0 mt-2">
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsWFHExpandedAM(!isWFHExpandedAM)}
+                >
+                  <h6 className="font-semibold">Working From Home:</h6>
+                  <span>{isWFHExpandedAM ? "▲" : "▼"}</span>
+                </button>
+                {isWFHExpandedAM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesAM
+                      .filter(
+                        (employee) =>
+                          employee.status === "AM" || employee.status === "Full"
+                      )
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
-              <div className="w-1/2">
-                <h6 className="font-semibold">In Office:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesAM
-                    .filter((employee) => employee.status === "In Office")
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+              {/* Collapsible In Office Section */}
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsInOfficeExpandedAM(!isInOfficeExpandedAM)}
+                >
+                  <h6 className="font-semibold">In Office:</h6>
+                  <span>{isInOfficeExpandedAM ? "▲" : "▼"}</span>
+                </button>
+                {isInOfficeExpandedAM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesAM
+                      .filter((employee) => employee.status === "In Office")
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
@@ -590,39 +531,59 @@ export default function Component() {
               value={searchTermPM}
               onChange={(e) => setSearchTermPM(e.target.value)}
             />
-            <div className="flex space-x-4 mt-2">
-              <div className="w-1/2">
-                <h6 className="font-semibold">Working From Home:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesPM
-                    .filter(
-                      (employee) =>
-                        employee.status === "PM" || employee.status === "Full"
-                    )
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+            {/* Collapsible Working From Home Section */}
+            <div className="flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0 mt-2">
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsWFHExpandedPM(!isWFHExpandedPM)}
+                >
+                  <h6 className="font-semibold">Working From Home:</h6>
+                  <span>{isWFHExpandedPM ? "▲" : "▼"}</span>
+                </button>
+                {isWFHExpandedPM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesPM
+                      .filter(
+                        (employee) =>
+                          employee.status === "PM" || employee.status === "Full"
+                      )
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
-              <div className="w-1/2">
-                <h6 className="font-semibold">In Office:</h6>
-                <ul className="list-disc pl-5">
-                  {filteredEmployeesPM
-                    .filter((employee) => employee.status === "In Office")
-                    .sort((a, b) =>
-                      a.fullName
-                        .split(" ")[1]
-                        .localeCompare(b.fullName.split(" ")[1])
-                    )
-                    .map((employee) => (
-                      <li key={employee.id}>{employee.fullName}</li>
-                    ))}
-                </ul>
+
+              {/* Collapsible In Office Section */}
+              <div className="w-full lg:w-1/2">
+                <button
+                  className="flex items-center justify-between w-full p-2 bg-gray-100 border border-gray-300 rounded-md"
+                  onClick={() => setIsInOfficeExpandedPM(!isInOfficeExpandedPM)}
+                >
+                  <h6 className="font-semibold">In Office:</h6>
+                  <span>{isInOfficeExpandedPM ? "▲" : "▼"}</span>
+                </button>
+                {isInOfficeExpandedPM && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {filteredEmployeesPM
+                      .filter((employee) => employee.status === "In Office")
+                      .sort((a, b) =>
+                        a.fullName
+                          .split(" ")[1]
+                          .localeCompare(b.fullName.split(" ")[1])
+                      )
+                      .map((employee) => (
+                        <li key={employee.id}>{employee.fullName}</li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
@@ -653,16 +614,16 @@ export default function Component() {
         setLoading(true);
         let data = [];
         for (let i = 0; i < 5; i++) {
-          const date = new Date();
+          const date = startOfWeek;
           date.setDate(date.getDate() - date.getDay() + 1 + i); // Get Mon-Fri dates
-          const dayData = await fetchEmployeesUnderManagerWeekView(date);
+          const dayData = await fetchEmployeesInDeptWeekView(date);
           data.push(dayData);
         }
         setWeekData(data);
         setLoading(false);
       };
       fetchWeekData();
-    }, [selectedDepartment]);
+    }, [selectedDepartment, currentDate]);
 
     if (loading) {
       return <div>Loading...</div>;
@@ -794,10 +755,12 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${months[currentDate.getMonth()]
-                    }`
-                    : `${months[currentDate.getMonth()]
-                    } ${currentDate.getFullYear()}`}{" "}
+                    ? `${currentDate.getDate()} ${
+                        months[currentDate.getMonth()]
+                      }`
+                    : `${
+                        months[currentDate.getMonth()]
+                      } ${currentDate.getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>
