@@ -13,6 +13,24 @@ import { useNavigate } from "react-router-dom";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
+interface Request {
+  request_id: number;
+  staff_id: number;
+  request_date: string;
+  request_type: string;
+  reason: string;
+  status: string;
+  exceeded: boolean;
+  created_date: string;
+  approval_manager_id: number;
+  comments: string;
+  decision_date: string | null;
+}
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
 export default function MyRequests() {
   const navigate = useNavigate();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -22,15 +40,18 @@ export default function MyRequests() {
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [managerCache, setManagerCache] = useState<{ [key: number]: string }>(
     {}
   );
-  const [dateRange, setDateRange] = useState({ from: null, to: null });
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
@@ -43,15 +64,25 @@ export default function MyRequests() {
     }
   }, [navigate]);
 
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range) {
+      setDateRange({
+        from: range.from ? (range.from) : undefined,
+        to: range.to ? (range.to) : undefined,
+      });
+    }
+  };
+
   const fetchAllManagers = async () => {
     try {
       const response = await axios.get("http://localhost:5002/employee");
       if (response.data.code === 200) {
         const managers = response.data.data.employee_list.filter(
-          (emp: any) => emp.role === 1 || emp.role === 3
+          (emp: { role: number }) => emp.role === 1 || emp.role === 3
         );
         const managerDict: { [key: number]: string } = {};
-        managers.forEach((manager: any) => {
+        managers.forEach((manager: { staff_id: number; staff_fname: string }) => {
           managerDict[manager.staff_id] = manager.staff_fname;
         });
         setManagerCache(managerDict);
@@ -93,7 +124,7 @@ export default function MyRequests() {
     fetchRequests();
   }, []);
 
-  const filterRequests = (requests: any[]) => {
+  const filterRequests = (requests: Request[]) => {
     const today = new Date();
 
     return requests.filter((request) => {
@@ -106,14 +137,15 @@ export default function MyRequests() {
       switch (viewFilter) {
         case "today":
           return isSameDay(requestDate, today);
-        case "week":
+        case "week":{
           const weekStart = startOfWeek(today);
           const weekEnd = endOfWeek(today);
           return isWithinInterval(requestDate, {
             start: weekStart,
             end: weekEnd,
           });
-        case "month":
+        }
+        case "month":{
           const [year, month] = selectedMonth.split("-");
           const monthStart = startOfMonth(
             new Date(parseInt(year), parseInt(month) - 1)
@@ -123,6 +155,7 @@ export default function MyRequests() {
             start: monthStart,
             end: monthEnd,
           });
+        }
         case "custom":
           if (dateRange?.from && dateRange?.to) {
             return isWithinInterval(requestDate, {
@@ -215,7 +248,7 @@ export default function MyRequests() {
     }
   };
 
-  const handleCancelClick = (request: any) => {
+  const handleCancelClick = (request: Request) => {
     setSelectedRequest(request);
     setIsDialogOpen(true);
   };
@@ -352,7 +385,8 @@ export default function MyRequests() {
             <DateRangePicker
               from={dateRange?.from}
               to={dateRange?.to}
-              onSelect={(range) => setDateRange(range)}
+              onSelect={(range) =>
+                handleDateRangeChange(range as DateRange | undefined)}
             />
           </div>
         )}

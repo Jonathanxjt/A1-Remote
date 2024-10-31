@@ -4,12 +4,13 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Footer from "./components/footer.tsx";
+// @ts-ignore
 import NotificationSocket from "./components/NotificationSocket.js";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";
-import Login from "./pages/Login/Login"; // Ensure Login is imported here
-import Mailbox from "./pages/Mailbox/Mailbox.tsx";
-import ManageRequests from "./pages/ManageRequests/ManageRequests.tsx";
+import Login from "./pages/Login/Login"; 
+import Mailbox from "./pages/Mailbox/Mailbox";
+import ManageRequests from "./pages/ManageRequests/ManageRequests";
 import MyRequests from "./pages/MyRequests/MyRequests";
 import MySchedule from "./pages/MySchedule/MySchedule";
 import NotFound from "./pages/NotFound";
@@ -17,13 +18,25 @@ import RequestPage from "./pages/RequestPage/RequestPage.tsx";
 import ViewOverall from "./pages/ViewOverall/ViewOverall.tsx";
 import { useNavigate } from "react-router-dom";
 
-const App: React.FC = () => {
-  const [notifications, setNotifications] = useState([]);
-  const navigate = useNavigate();  
-  // Update notification count based on unread notifications
-  const notificationCount = notifications.length;
 
-  const [staffId, setStaffId] = useState(null);
+interface Notification {
+  id: number;
+  message: string;
+  is_read: boolean;
+  notification_date: string;
+  notification_id: number;
+  receiver_id: number;
+  receiver_name: string;
+  request_id: number;
+  sender_id: number;
+  sender_name: string;
+}
+
+const App: React.FC = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const navigate = useNavigate();  
+
+  const [staffId, setStaffId] = useState<string | null>(null);
 
   // Function to handle login/logout changes
   const handleStorageChange = () => {
@@ -32,7 +45,7 @@ const App: React.FC = () => {
   };
 
   // Function to update staffId when user logs in
-  const handleLogin = (newStaffId) => {
+  const handleLogin = (newStaffId: string) => {
     sessionStorage.setItem("staff_id", newStaffId); // Save to session storage
     setStaffId(newStaffId); // Update state in App
   };

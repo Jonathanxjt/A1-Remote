@@ -9,6 +9,8 @@
     }
   ],
   "compilerOptions": {
+    "allowJs": true,
+    "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

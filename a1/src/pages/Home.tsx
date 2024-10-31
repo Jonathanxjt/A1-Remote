@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+
+interface EmployeeData {
+  country: string;
+  dept: string;
+  email: string;
+  position: string;
+  reporting_manager: number;
+  role: number;
+  staff_fname: string;
+  staff_id: number;
+  staff_lname: string;
+}
+
 export default function HomePage() {
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<EmployeeData | null>(null);
 
   useEffect(() => {
     const staff_id = sessionStorage.getItem("staff_id");
@@ -13,7 +26,7 @@ export default function HomePage() {
     }
   }, []);
 
-  const fetchEmployeeData = async (staff_id) => {
+  const fetchEmployeeData = async (staff_id : string) => {
     try {
       const response = await axios.get(`http://localhost:5002/employee/${staff_id}`);
 

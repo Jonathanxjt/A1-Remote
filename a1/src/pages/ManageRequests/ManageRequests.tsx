@@ -50,9 +50,31 @@ import { useNavigate } from "react-router-dom";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 
+interface Request {
+  request_id: number;
+  staff_id: number;
+  request_date: string;
+  request_type: string;
+  reason: string;
+  status: string;
+  exceeded: boolean;
+  created_date: string;
+  approval_manager_id: number;
+  comments: string;
+  decision_date: string | null;
+}
+
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
 export default function WorkFromHomeRequests() {
   const navigate = useNavigate();
 
@@ -72,6 +94,8 @@ export default function WorkFromHomeRequests() {
     }
   }, [navigate]);
 
+
+
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,7 +104,8 @@ export default function WorkFromHomeRequests() {
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
-  const [requests, setRequests] = useState<any[]>([]);
+
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [employeeCache, setEmployeeCache] = useState<{ [key: number]: string }>(
     {}
@@ -88,7 +113,7 @@ export default function WorkFromHomeRequests() {
 
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [actionType, setActionType] = useState<"reject" | "revoke">("reject");
-  const [actionRequest, setActionRequest] = useState<any | null>(null);
+  const [actionRequest, setActionRequest] = useState<Request | null>(null);
   const [actionComment, setActionComment] = useState("");
 
   const [isBulkActionModalOpen, setIsBulkActionModalOpen] = useState(false);
@@ -98,7 +123,20 @@ export default function WorkFromHomeRequests() {
   const [bulkActionComment, setBulkActionComment] = useState("");
 
   const [statusFilter, setStatusFilter] = useState("Pending");
-  const [dateRange, setDateRange] = useState({ from: null, to: null });
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
+
+  
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range) {
+      setDateRange({
+        from: range.from ? (range.from) : undefined,
+        to: range.to ? (range.to) : undefined,
+      });
+    }
+  };
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
@@ -113,10 +151,11 @@ export default function WorkFromHomeRequests() {
         const employees = response.data.data.employee_list;
         const employeeDict: { [key: number]: string } = {};
 
-        // Populate the dictionary with staff_id as the key and staff_fname as the value
-        employees.forEach((employee: any) => {
-          employeeDict[employee.staff_id] = employee.staff_fname;
-        });
+        employees.forEach(
+          (employee: { staff_id: number; staff_fname: string }) => {
+            employeeDict[employee.staff_id] = employee.staff_fname;
+          }
+        );
 
         setEmployeeCache(employeeDict); // Store the dictionary in state
       } else {
@@ -137,26 +176,27 @@ export default function WorkFromHomeRequests() {
         if (response.data.code === 200) {
           // First filter for Pending/Approved requests
           const pendingRequests = response.data.data.work_request.filter(
-            (request: any) =>
+            (request: Request) =>
               request.status === "Pending" || request.status === "Approved"
           );
 
           // Sort by created_date, oldest first to track order properly
-          const sortedRequests = pendingRequests.sort((a: any, b: any) =>
-            compareAsc(new Date(a.created_date), new Date(b.created_date))
+          const sortedRequests = pendingRequests.sort(
+            (a: Request, b: Request) =>
+              compareAsc(new Date(a.created_date), new Date(b.created_date))
           );
 
           // Create a map to track request count per week
           const weekRequests = new Map();
 
           // Process requests and add exceeded flag
-          const processedRequests = sortedRequests.map((request: any) => {
+          const processedRequests = sortedRequests.map((request: Request) => {
             const weekStart = startOfWeek(new Date(request.created_date), {
               weekStartsOn: 1,
             }).getTime();
 
             // Get or initialize array of requests for this week
-            let weekArray = weekRequests.get(weekStart) || [];
+            const weekArray = weekRequests.get(weekStart) || [];
             weekArray.push(request);
             weekRequests.set(weekStart, weekArray);
 
@@ -190,7 +230,7 @@ export default function WorkFromHomeRequests() {
     fetchRequests();
   }, []);
 
-  const filterRequests = (requests: any[]) => {
+  const filterRequests = (requests: Request[]) => {
     const today = new Date();
 
     const filteredByStatus = requests.filter(
@@ -203,14 +243,16 @@ export default function WorkFromHomeRequests() {
       switch (viewFilter) {
         case "today":
           return isSameDay(requestDate, today);
-        case "week":
+        case "week": {
           const weekStart = startOfWeek(today);
           const weekEnd = endOfWeek(today);
           return isWithinInterval(requestDate, {
             start: weekStart,
             end: weekEnd,
           });
-        case "month":
+        }
+
+        case "month": {
           const [year, month] = selectedMonth.split("-");
           const monthStart = startOfMonth(
             new Date(parseInt(year), parseInt(month) - 1)
@@ -220,6 +262,8 @@ export default function WorkFromHomeRequests() {
             start: monthStart,
             end: monthEnd,
           });
+        }
+
         case "custom":
           if (dateRange?.from && dateRange?.to) {
             return isWithinInterval(requestDate, {
@@ -281,7 +325,7 @@ export default function WorkFromHomeRequests() {
   };
 
   // Function to handle approval of a request directly without a dialog box
-  const handleApproveRequest = async (requestId) => {
+  const handleApproveRequest = async (requestId: number) => {
     try {
       await axios.put(
         `http://localhost:5005/scheduler/${requestId}/update_work_request_and_schedule`,
@@ -379,7 +423,7 @@ export default function WorkFromHomeRequests() {
   };
 
   // Open modal for both reject and revoke actions
-  const openActionModal = (request: any, type: "reject" | "revoke") => {
+  const openActionModal = (request: Request, type: "reject" | "revoke") => {
     console.log(`${type} request:`, request);
     setActionType(type);
     setActionRequest(request);
@@ -402,13 +446,15 @@ export default function WorkFromHomeRequests() {
         actionComment
       );
 
-      await axios.put(
-        `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
-        {
-          status: statusUpdate,
-          comments: actionComment,
-        }
-      );
+      if (actionRequest) {
+        await axios.put(
+          `http://localhost:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+          {
+            status: statusUpdate,
+            comments: actionComment,
+          }
+        );
+      }
       toast.success(`${statusUpdate} Request!`, {
         position: "top-right",
         autoClose: 2000,
@@ -421,7 +467,9 @@ export default function WorkFromHomeRequests() {
         transition: Flip,
       });
       setSelectedRequests((prevSelectedRequests) =>
-        prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+        prevSelectedRequests.filter(
+          (id) => actionRequest && id !== actionRequest.request_id
+        )
       );
 
       closeActionModal();
@@ -443,7 +491,9 @@ export default function WorkFromHomeRequests() {
       });
 
       setSelectedRequests((prevSelectedRequests) =>
-        prevSelectedRequests.filter((id) => id !== actionRequest.request_id)
+        prevSelectedRequests.filter(
+          (id) => actionRequest && id !== actionRequest.request_id
+        )
       );
     }
   };
@@ -554,7 +604,7 @@ export default function WorkFromHomeRequests() {
         </li>
       </ul>
     </div>
-  )
+  );
 
   if (loading) {
     return <div>Loading...</div>;
@@ -566,8 +616,7 @@ export default function WorkFromHomeRequests() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Work From Home Requests</h1>
           <p className="text-sm text-muted-foreground">
-            Pending Requests:{" "}
-            <span className="font-medium"></span>
+            Pending Requests: <span className="font-medium"></span>
           </p>
         </div>
 
@@ -636,7 +685,9 @@ export default function WorkFromHomeRequests() {
             <DateRangePicker
               from={dateRange?.from}
               to={dateRange?.to}
-              onSelect={(range) => setDateRange(range)}
+              onSelect={(range) =>
+                handleDateRangeChange(range as DateRange | undefined)
+              }
             />
           </div>
         )}
@@ -859,8 +910,9 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="comment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${actionType === "reject" ? "rejection" : "revoking"
-                }`}
+              placeholder={`Please provide a reason for ${
+                actionType === "reject" ? "rejection" : "revoking"
+              }`}
               value={actionComment}
               onChange={(e) => setActionComment(e.target.value)}
             />
@@ -905,8 +957,9 @@ export default function WorkFromHomeRequests() {
             <Textarea
               id="bulkComment"
               className="mt-2"
-              placeholder={`Please provide a reason for ${bulkActionType === "reject" ? "rejecting" : "revoking"
-                } all selected requests`}
+              placeholder={`Please provide a reason for ${
+                bulkActionType === "reject" ? "rejecting" : "revoking"
+              } all selected requests`}
               value={bulkActionComment}
               onChange={(e) => setBulkActionComment(e.target.value)}
             />
