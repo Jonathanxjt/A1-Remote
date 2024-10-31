@@ -87,7 +87,7 @@ services:
       - .:/usr/src/app
     environment:
       - TZ=Asia/Singapore
-      - DATABASE_URL=${DATABASE_URL}  # Pass the database URL from your .env file
+      - .env
     networks:
       - my_network
     restart: unless-stopped  # Ensure the service restarts if it fails
