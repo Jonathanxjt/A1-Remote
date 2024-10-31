@@ -68,6 +68,7 @@ jobs:
         echo "All containers are down. Running integration tests."
         
         # Run coverage and integration tests
+        cd ../.. &&
         coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
         coverage xml
     
