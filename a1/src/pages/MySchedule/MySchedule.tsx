@@ -14,7 +14,6 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Employee } from "src/Models/Employee";
-import { debounce } from "lodash";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -52,44 +51,44 @@ export default function Component() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [workRequests, setWorkRequests] = useState<WorkRequest[]>([]);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesAM, setEmployeesAM] = useState<Employee[]>([]);
   const [employeesPM, setEmployeesPM] = useState<Employee[]>([]);
-  const [isWFHExpandedAM, setIsWFHExpandedAM] = useState(false);
-  const [isInOfficeExpandedAM, setIsInOfficeExpandedAM] = useState(false);
-  const [isWFHExpandedPM, setIsWFHExpandedPM] = useState(false);
-  const [isInOfficeExpandedPM, setIsInOfficeExpandedPM] = useState(false);
   const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
   const currentYear = currentDate.getFullYear();
   const yearsRange = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i); // Range from currentYear - 1 to currentYear + 1
-  const [user, setUser] = useState(() => {
+  const [user] = useState(() => {
     return JSON.parse(sessionStorage.getItem("user") || "{}");
   });
-
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
+  const department = user.dept;
 
   useEffect(() => {
     const fetchData = async () => {
       setDayLoading(true);
-      await fetchEmployeesUnderManager(); // Wait for the fetch to complete
+      await fetchEmployeesInDeptDayView(); // Wait for the fetch to complete
       setDayLoading(false); // Set loading state to false after fetch completes
     };
-
     fetchData();
   }, [currentDate]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      window.location.reload(); // Refresh page on resize
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const parseDate = (dateStr: string): Date => {
     return new Date(dateStr);
   };
 
-  // Handle day selection
-
   const handleDateSelection = (date: Date) => {
     const dayOfWeek = date.getDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      // Skip weekends
       setSelectedDate(date);
       setCurrentDate(date);
     }
@@ -101,54 +100,82 @@ export default function Component() {
       date1.getFullYear() === date2.getFullYear()
     );
   };
-  const fetchEmployeesUnderManager = async () => {
+
+  const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
-      const reportingManagerId = user.reporting_manager;
-      const staff_id = user.staff_id;
-      const role = user.role;
-      let response;
+      const response = await axios.get(
+        `http://localhost:5004/schedule/dept/${department}`
+      );
+      if (response.data.code === 200) {
+        let wfhCountAM = 0;
+        let inOfficeCountAM = 0;
+        let wfhCountPM = 0;
+        let inOfficeCountPM = 0;
 
-      if (role === 1 || role === 3) {
-        // Fetch schedules for both manager and team
-        const ownScheduleResponse = await axios.get(
-          `http://localhost:5004/schedule/team/${staff_id}`
-        );
-        const teamScheduleResponse = await axios.get(
-          `http://localhost:5004/schedule/team/${reportingManagerId}`
-        );
+        response.data.data.forEach((item: any) => {
+          const schedule = item.schedule;
+          if (!schedule || schedule === "No schedule found.") {
+            inOfficeCountAM += 1;
+            inOfficeCountPM += 1;
+          } else {
+            const todaySchedule = schedule.filter((s: any) => {
+              const scheduleDate = new Date(s.date);
+              return isSameDay(scheduleDate, date);
+            });
 
-        if (
-          ownScheduleResponse.data.code === 200 &&
-          teamScheduleResponse.data.code === 200
-        ) {
-          console.log("ownScheduleResponse", ownScheduleResponse.data.data);
-          console.log("teamScheduleResponse", teamScheduleResponse.data.data);
-          // Combine data from both responses
-          response = {
-            data: {
-              code: 200,
-              data: [
-                ...ownScheduleResponse.data.data,
-                ...teamScheduleResponse.data.data,
-              ],
-            },
-          };
-        } else {
-          console.error("Failed to fetch schedules for manager or team.");
-          response = {
-            data: {
-              code: 500,
-              message: "Error fetching schedules",
-            },
-          };
-        }
-      } else {
-        // If not a manager role, only get the team schedule
-        response = await axios.get(
-          `http://localhost:5004/schedule/team/${reportingManagerId}`
-        );
+            const hasAM = todaySchedule.some(
+              (s: any) => s.request_type === "AM" && s.status === "Approved"
+            );
+            const hasPM = todaySchedule.some(
+              (s: any) => s.request_type === "PM" && s.status === "Approved"
+            );
+            const isFullDay = todaySchedule.some(
+              (s: any) =>
+                s.request_type === "Full Day" && s.status === "Approved"
+            );
+
+            if (todaySchedule.some((s: any) => s.request_type === "Full Day" && s.status === "Approved")) {
+              wfhCountAM++;
+              wfhCountPM++;
+            } else {
+              if (todaySchedule.some((s: any) => s.request_type === "AM" && s.status === "Approved")) {
+                wfhCountAM++; // Employee is WFH for AM
+              } else {
+                inOfficeCountAM++; // Employee is in office for AM
+              }
+            
+              if (todaySchedule.some((s: any) => s.request_type === "PM" && s.status === "Approved")) {
+                wfhCountPM++; // Employee is WFH for PM
+              } else {
+                inOfficeCountPM++; // Employee is in office for PM
+              }
+            }   
+          }
+        });
+
+        return {
+          wfhCountAM,
+          inOfficeCountAM,
+          wfhCountPM,
+          inOfficeCountPM,
+        };
       }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      return {
+        wfhCountAM: 0,
+        inOfficeCountAM: 0,
+        wfhCountPM: 0,
+        inOfficeCountPM: 0,
+      };
+    }
+  };
 
+  const fetchEmployeesInDeptDayView = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5004/schedule/dept/${department}`
+      );
       if (response.data.code === 200) {
         const employeesAMList: Employee[] = [];
         const employeesPMList: Employee[] = [];
@@ -210,87 +237,9 @@ export default function Component() {
         });
         setEmployeesAM(employeesAMList);
         setEmployeesPM(employeesPMList);
-        console.log(employeesAMList);
       }
     } catch (error) {
       console.error("Error fetching employees:", error);
-    }
-  };
-
-  const fetchEmployeesUnderManagerForDay = async (date: Date) => {
-    try {
-      const reportingManagerId = user.reporting_manager;
-      const response = await axios.get(
-        `http://localhost:5004/schedule/team/${reportingManagerId}`
-      );
-      if (response.data.code === 200) {
-        let wfhCountAM = 0;
-        let inOfficeCountAM = 0;
-        let wfhCountPM = 0;
-        let inOfficeCountPM = 0;
-
-        // Format the input date to 'YYYY-MM-DD'
-        const formattedDate = date.toISOString().split("T")[0];
-
-        response.data.data.forEach((item: any) => {
-          const schedule = item.schedule;
-          if (!schedule || schedule === "No schedule found.") {
-            inOfficeCountAM += 1;
-            inOfficeCountPM += 1;
-          } else {
-            const todaySchedule = schedule.filter((s: any) => {
-              const scheduleDate = new Date(s.date);
-              return isSameDay(scheduleDate, date);
-            });
-
-            const hasAM = todaySchedule.some(
-              (s: any) => s.request_type === "AM" && s.status === "Approved"
-            );
-            const hasPM = todaySchedule.some(
-              (s: any) => s.request_type === "PM" && s.status === "Approved"
-            );
-            const isFullDay = todaySchedule.some(
-              (s: any) =>
-                s.request_type === "Full Day" && s.status === "Approved"
-            );
-
-            // Increment counters based on schedule
-            if (hasAM) {
-              wfhCountAM++; // Employee is WFH for AM
-            } else {
-              inOfficeCountAM++; // Employee is in office for AM
-            }
-
-            if (hasPM) {
-              wfhCountPM++; // Employee is WFH for PM
-            } else {
-              inOfficeCountPM++; // Employee is in office for PM
-            }
-
-            // If they have a full day schedule, increment both counts
-            if (isFullDay) {
-              wfhCountAM++; // Full Day also counts for AM
-              wfhCountPM++; // Full Day also counts for PM
-            }
-          }
-        });
-
-        // Return WFH and In Office counters for AM and PM
-        return {
-          wfhCountAM,
-          inOfficeCountAM,
-          wfhCountPM,
-          inOfficeCountPM,
-        };
-      }
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-      return {
-        wfhCountAM: 0,
-        inOfficeCountAM: 0,
-        wfhCountPM: 0,
-        inOfficeCountPM: 0,
-      };
     }
   };
 
@@ -344,23 +293,17 @@ export default function Component() {
 
   const prev = () => {
     if (currentView === "day") {
-      // Go to the previous day
-      let previousDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
+      let previousDate = new Date(currentDate);
       previousDate.setDate(previousDate.getDate() - 1); // Subtract one day
 
-      // Skip weekends (Saturday and Sunday)
       const dayOfWeek = previousDate.getDay();
       if (dayOfWeek === 0) {
-        // If it's Sunday, move to Friday
         previousDate.setDate(previousDate.getDate() - 2);
       } else if (dayOfWeek === 6) {
-        // If it's Saturday, move to Friday
         previousDate.setDate(previousDate.getDate() - 1);
       }
-
       setCurrentDate(previousDate);
     } else if (currentView === "month") {
-      // Go to the previous month (first day of the month), no need to consider weekends
       const previousMonthDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - 1,
@@ -372,24 +315,17 @@ export default function Component() {
 
   const next = () => {
     if (currentView === "day") {
-      // Go to the next day
-      let nextDate = new Date(currentDate); // Create a new Date object to avoid mutating the original
-      nextDate.setDate(nextDate.getDate() + 1); // Add one day
-
-      // Skip weekends (Saturday and Sunday)
+      let nextDate = new Date(currentDate);
+      nextDate.setDate(nextDate.getDate() + 1);
       const dayOfWeek = nextDate.getDay();
       if (dayOfWeek === 6) {
-        // If it's Saturday, move to Monday
         nextDate.setDate(nextDate.getDate() + 2);
       } else if (dayOfWeek === 0) {
-        // If it's Sunday, move to Monday
         nextDate.setDate(nextDate.getDate() + 1);
       }
-
       setCurrentDate(nextDate);
       setSelectedDate(nextDate);
     } else if (currentView === "month") {
-      // Go to the next month (first day of the month), no need to consider weekends
       const nextMonthDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() + 1,
@@ -503,7 +439,6 @@ export default function Component() {
             }
           }}
         >
-          {/* Use flex column to align items vertically */}
           <div className="flex flex-col items-center">
             <div
               className={`font-semibold ${isSelected ? "text-blue-600" : ""} ${
@@ -514,7 +449,6 @@ export default function Component() {
             >
               {day}
             </div>
-            {/* Status Badge below the date */}
             {dayStatus && (
               <div className="mt-2">
                 <StatusBadge status={dayStatus.status} />
@@ -555,6 +489,10 @@ export default function Component() {
     const totalPMinOfficeCount = employeesPM.length - totalPMCount;
     const [searchTermAM, setSearchTermAM] = useState("");
     const [searchTermPM, setSearchTermPM] = useState("");
+    const [isWFHExpandedAM, setIsWFHExpandedAM] = useState(false);
+    const [isInOfficeExpandedAM, setIsInOfficeExpandedAM] = useState(false);
+    const [isWFHExpandedPM, setIsWFHExpandedPM] = useState(false);
+    const [isInOfficeExpandedPM, setIsInOfficeExpandedPM] = useState(false);
 
     const filteredEmployeesAM = employeesAM.filter((employee) =>
       employee.fullName.toLowerCase().includes(searchTermAM.toLowerCase())
@@ -564,6 +502,24 @@ export default function Component() {
       employee.fullName.toLowerCase().includes(searchTermPM.toLowerCase())
     );
 
+    useEffect(() => {
+      if (searchTermAM) {
+        setIsWFHExpandedAM(true);
+        setIsInOfficeExpandedAM(true);
+      } else {
+        setIsWFHExpandedAM(false);
+        setIsInOfficeExpandedAM(false);
+      }
+
+      if (searchTermPM) {
+        setIsWFHExpandedPM(true);
+        setIsInOfficeExpandedPM(true);
+      } else {
+        setIsWFHExpandedPM(false);
+        setIsInOfficeExpandedPM(false);
+      }
+    }, [searchTermAM, searchTermPM]);
+
     if (dayLoading) {
       return <div>Loading...</div>; // Render loading indicator
     }
@@ -571,10 +527,10 @@ export default function Component() {
     return (
       <>
         <div className="mt-6 flex flex-col lg:flex-row space-y-4 lg:space-x-4 lg:space-y-0">
-          <div className="w-full lg:w-1/2 pr-0 lg:pr-2 border-r lg:border-r-2 border-gray-300">
+          <div className="w-full lg:w-1/2 pr-0 lg:pr-4 border-r lg:border-r-2 border-gray-300">
             <EmployeeStatusPieChart employees={employeesAM} />
             <h4 className="text-xl lg:text-3xl font-bold mt-4">AM Status</h4>
-            <div className="mt-4 flex flex-col lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
+            <div className="mt-4 flex lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
                 <h5 className="text-2xl lg:text-3xl">{totalAMCount}</h5>
                 <p className="text-xs lg:text-sm text-gray-500">WFH</p>
@@ -652,7 +608,7 @@ export default function Component() {
           <div className="w-full lg:w-1/2">
             <EmployeeStatusPieChart employees={employeesPM} />
             <h4 className="text-xl lg:text-3xl font-bold mt-4">PM Status</h4>
-            <div className="mt-4 flex flex-col lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
+            <div className="mt-4 flex lg:flex-row justify-evenly items-center border border-gray-300 rounded-lg p-4">
               <div className="text-center flex-grow bg-gray-100 p-4 rounded-md">
                 <h5 className="text-2xl lg:text-3xl">{totalPMCount}</h5>
                 <p className="text-xs lg:text-sm text-gray-500">WFH</p>
@@ -751,16 +707,16 @@ export default function Component() {
       const fetchWeekData = async () => {
         let data = [];
         for (let i = 0; i < 5; i++) {
-          const date = new Date();
+          const date = startOfWeek;
           date.setDate(date.getDate() - date.getDay() + 1 + i);
-          const dayData = await fetchEmployeesUnderManagerForDay(date);
+          const dayData = await fetchEmployeesInDeptWeekView(date);
           data.push(dayData);
         }
         setWeekData(data);
         setLoading(false);
       };
       fetchWeekData();
-    }, []);
+    }, [currentDate]);
 
     if (loading) {
       return <div>Loading...</div>;
@@ -769,7 +725,6 @@ export default function Component() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {weekData.map((dayCount, i) => {
-          // Create a new date for each day of the week
           const currentDate = new Date(startOfWeek);
           currentDate.setDate(startOfWeek.getDate() + i);
 

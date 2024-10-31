@@ -45,6 +45,7 @@ jobs:
     - name: Export AWS RDS URL
       run: echo "AWS_URL=${{ secrets.AWS_URL }}" >> $GITHUB_ENV
 
+    # bash file uses absolute file path
     - name: SSH into EC2, pull changes, run tests, and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
