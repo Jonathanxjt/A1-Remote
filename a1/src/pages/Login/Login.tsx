@@ -9,7 +9,11 @@ import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
 
-export default function LoginPage({ onLogin }) { // <-- Accept onLogin prop
+interface LoginPageProps {
+  onLogin: (staffId: string) => void;
+}
+
+export default function LoginPage({ onLogin }: LoginPageProps) { 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState({ email: "", password: "" });

@@ -182,6 +182,9 @@ export default function Component() {
           const schedule = item.schedule;
 
           const employeeData: Employee = {
+            staff_id: employee.staff_id,
+            staff_fname: employee.staff_fname,
+            staff_lname: employee.staff_lname,
             id: employee.staff_id,
             fullName: `${employee.staff_fname} ${employee.staff_lname}`,
             status: "In Office",
@@ -632,7 +635,7 @@ export default function Component() {
           const dayData = await fetchEmployeesInDeptWeekView(date);
           data.push(dayData);
         }
-        setWeekData(data);
+        setWeekData(data.filter((dayData) => dayData !== undefined));
         setLoading(false);
       };
       fetchWeekData();

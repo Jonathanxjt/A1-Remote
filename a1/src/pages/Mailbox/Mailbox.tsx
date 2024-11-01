@@ -11,18 +11,46 @@
   import { Flip, toast } from "react-toastify";
   import "react-toastify/dist/ReactToastify.css";
 
-  export default function NotificationPage({ notifications: initialNotifications, setNotifications }) {
+  interface Notification {
+    id: number;
+    message: string;
+    is_read: boolean;
+    notification_date: string;
+    notification_id: number;
+    receiver_id: number;
+    receiver_name: string;
+    request_id: number;
+    sender_id: number;
+    sender_name: string;
+  }
+
+  interface NotificationPageProps {
+    notifications: Notification[];
+    setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  }
+
+  interface DateRange {
+    from: Date | undefined;
+    to: Date | undefined;
+  }
+  
+
+  export default function NotificationPage({ notifications: initialNotifications, setNotifications }: NotificationPageProps) {
     const [notifications, setLocalNotifications] = useState(initialNotifications);
-    const [selectedNotifications, setSelectedNotifications] = useState([]);
+    const [selectedNotifications, setSelectedNotifications] = useState<number[]>([]);
     const [sortOrder, setSortOrder] = useState("desc");
     const [viewFilter, setViewFilter] = useState("all");
-    const [dateRange, setDateRange] = useState({ from: null, to: null });
+    const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
     const [statusFilter, setStatusFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [selectedMonth, setSelectedMonth] = useState(
       format(new Date(), "yyyy-MM")
     );
+
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+      setDateRange(range ?? { from: undefined, to: undefined });
+    };
 
     useEffect(() => {
       setLocalNotifications(initialNotifications);
@@ -33,7 +61,7 @@
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     };
 
-    const toggleSelectNotification = (id) => {
+    const toggleSelectNotification = (id: number) => {
       setSelectedNotifications((prev) =>
         prev.includes(id)
           ? prev.filter((notifId) => notifId !== id)
@@ -52,7 +80,7 @@
       }
     };
 
-    const markAsRead = async (ids) => {
+    const markAsRead = async (ids: number[]) => {
       try {
         await Promise.all(
           ids.map((id) =>
@@ -74,7 +102,7 @@
       }
     };
 
-    const deleteNotifications = async (ids) => {
+    const deleteNotifications = async (ids: number[]) => {
       try {
         await Promise.all(
           ids.map((id) =>
@@ -137,13 +165,14 @@
         case "today":
           return isSameDay(notificationDate, today);
 
-        case "week":
+        case "week": {
           const weekStart = startOfWeek(today);
           const weekEnd = endOfWeek(today);
           return isWithinInterval(notificationDate, {
             start: weekStart,
             end: weekEnd,
           });
+        }
 
         case "month":
           if (selectedMonth) {
@@ -266,7 +295,7 @@
               <DateRangePicker
                 from={dateRange?.from}
                 to={dateRange?.to}
-                onSelect={(range) => setDateRange(range)}
+                onSelect={(range) => handleDateRangeChange(range as DateRange | undefined)}
               />
             </div>
           )}
@@ -384,7 +413,7 @@
                       selectedNotifications.filter(
                         (id) =>
                           !notifications.find((n) => n.notification_id === id)
-                            .is_read
+                            ?.is_read
                       )
                     )
                   }

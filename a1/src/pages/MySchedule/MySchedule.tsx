@@ -43,7 +43,33 @@ interface WorkRequest {
   type: WorkStatus;
   status: WorkStatus;
   reportingManager: string;
+  
 }
+
+
+interface RequestX {
+  request_id: number;
+  staff_id: number;
+  date: string;
+  request_type: string;
+  reason: string;
+  status: string;
+  exceeded: boolean;
+  created_date: string;
+  approval_manager_id: number;
+  comments: string;
+}
+
+interface Schedule {
+  approved_by: number;
+  date: string;
+  request_id: number;
+  request_type: WorkStatus;
+  schedule_id: number;
+  staff_id: number;
+  status: string;
+}
+
 
 export default function Component() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -112,39 +138,29 @@ export default function Component() {
         let wfhCountPM = 0;
         let inOfficeCountPM = 0;
 
-        response.data.data.forEach((item: any) => {
+        response.data.data.forEach((item: { employee: Employee; schedule: Schedule[] | undefined}) => {
           const schedule = item.schedule;
-          if (!schedule || schedule === "No schedule found.") {
+          if (!Array.isArray(schedule) || schedule.length === 0) {
             inOfficeCountAM += 1;
             inOfficeCountPM += 1;
           } else {
-            const todaySchedule = schedule.filter((s: any) => {
+            const todaySchedule = schedule.filter((s: Schedule) => {
               const scheduleDate = new Date(s.date);
               return isSameDay(scheduleDate, date);
             });
 
-            const hasAM = todaySchedule.some(
-              (s: any) => s.request_type === "AM" && s.status === "Approved"
-            );
-            const hasPM = todaySchedule.some(
-              (s: any) => s.request_type === "PM" && s.status === "Approved"
-            );
-            const isFullDay = todaySchedule.some(
-              (s: any) =>
-                s.request_type === "Full Day" && s.status === "Approved"
-            );
-
-            if (todaySchedule.some((s: any) => s.request_type === "Full Day" && s.status === "Approved")) {
+         
+            if (todaySchedule.some((s: Schedule) => s.request_type === "Full Day" && s.status === "Approved")) {
               wfhCountAM++;
               wfhCountPM++;
             } else {
-              if (todaySchedule.some((s: any) => s.request_type === "AM" && s.status === "Approved")) {
+              if (todaySchedule.some((s: Schedule) => s.request_type === "AM" && s.status === "Approved")) {
                 wfhCountAM++; // Employee is WFH for AM
               } else {
                 inOfficeCountAM++; // Employee is in office for AM
               }
             
-              if (todaySchedule.some((s: any) => s.request_type === "PM" && s.status === "Approved")) {
+              if (todaySchedule.some((s: Schedule) => s.request_type === "PM" && s.status === "Approved")) {
                 wfhCountPM++; // Employee is WFH for PM
               } else {
                 inOfficeCountPM++; // Employee is in office for PM
@@ -180,11 +196,14 @@ export default function Component() {
         const employeesAMList: Employee[] = [];
         const employeesPMList: Employee[] = [];
 
-        response.data.data.forEach((item: any) => {
+        response.data.data.forEach((item: { employee: Employee; schedule: Schedule[] | undefined}) => {
           const employee = item.employee;
           const schedule = item.schedule;
 
           const employeeData: Employee = {
+            staff_id: employee.staff_id,
+            staff_fname: employee.staff_fname,
+            staff_lname: employee.staff_lname,
             id: employee.staff_id,
             fullName: `${employee.staff_fname} ${employee.staff_lname}`,
             status: "In Office",
@@ -192,23 +211,23 @@ export default function Component() {
             position: employee.position,
           };
 
-          if (!schedule || schedule === "No schedule found.") {
+          if (!Array.isArray(schedule) || schedule.length === 0) {
             employeesAMList.push(employeeData);
             employeesPMList.push(employeeData);
           } else {
-            const todaySchedule = schedule.filter((s: any) => {
+            const todaySchedule = schedule.filter((s: Schedule) => {
               const scheduleDate = new Date(s.date);
               return isSameDay(scheduleDate, currentDate);
             });
 
             const hasAM = todaySchedule.some(
-              (s: any) => s.request_type === "AM" && s.status === "Approved"
+              (s: Schedule) => s.request_type === "AM" && s.status === "Approved"
             );
             const hasPM = todaySchedule.some(
-              (s: any) => s.request_type === "PM" && s.status === "Approved"
+              (s: Schedule) => s.request_type === "PM" && s.status === "Approved"
             );
             const isFullDay = todaySchedule.some(
-              (s: any) =>
+              (s: Schedule) =>
                 s.request_type === "Full Day" && s.status === "Approved"
             );
 
@@ -252,10 +271,10 @@ export default function Component() {
         if (response.data.code === 200) {
           const requests = response.data.data.work_request
             .filter(
-              (request: any) =>
+              (request : RequestX  ) =>
                 request.status === "Approved" || request.status === "Pending"
             )
-            .map((request: any) => ({
+            .map((request: RequestX) => ({
               id: request.request_id,
               date: parseDate(request.date),
               type: request.request_type as WorkStatus,
@@ -263,7 +282,7 @@ export default function Component() {
                 request.status === "Pending"
                   ? "Pending"
                   : (request.request_type as WorkStatus),
-              reportingManager: request.reporting_manager || "Unknown",
+              reportingManager: request.approval_manager_id || "Unknown",
             }));
           setWorkRequests(requests);
         } else {
@@ -293,7 +312,7 @@ export default function Component() {
 
   const prev = () => {
     if (currentView === "day") {
-      let previousDate = new Date(currentDate);
+      const previousDate = new Date(currentDate);
       previousDate.setDate(previousDate.getDate() - 1); // Subtract one day
 
       const dayOfWeek = previousDate.getDay();
@@ -315,7 +334,7 @@ export default function Component() {
 
   const next = () => {
     if (currentView === "day") {
-      let nextDate = new Date(currentDate);
+      const nextDate = new Date(currentDate);
       nextDate.setDate(nextDate.getDate() + 1);
       const dayOfWeek = nextDate.getDay();
       if (dayOfWeek === 6) {
@@ -336,7 +355,7 @@ export default function Component() {
   };
 
   const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-    const [isExpanded, setIsExpanded] = useState<boolean>(() => {
+    const [isExpanded] = useState<boolean>(() => {
       // Set the initial state based on the current viewport width
       return window.innerWidth >= 768;
     });
@@ -710,7 +729,9 @@ export default function Component() {
           const date = startOfWeek;
           date.setDate(date.getDate() - date.getDay() + 1 + i);
           const dayData = await fetchEmployeesInDeptWeekView(date);
-          data.push(dayData);
+          if (dayData) {
+            data.push(dayData);
+          }
         }
         setWeekData(data);
         setLoading(false);
