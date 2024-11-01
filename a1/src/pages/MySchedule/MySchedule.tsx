@@ -735,7 +735,7 @@ export default function Component() {
                 <p className="text-md mb-2">
                   {currentDate.toLocaleDateString()}{" "}
                 </p>
-                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
+                <div className="mt-4 mb-2 bg-blue-200 p-2 rounded-md">
                   {" "}
                   <h4 className="font-bold">AM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
@@ -757,7 +757,7 @@ export default function Component() {
                   </div>
                 </div>
 
-                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
+                <div className="mt-4 mb-2 bg-pink-200 p-2 rounded-md">
                   {" "}
                   <h4 className="font-bold">PM:</h4>
                   <div className="flex justify-around items-center w-full pt-2">
