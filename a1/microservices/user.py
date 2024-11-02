@@ -16,7 +16,13 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
-    CORS(app)    
+    CORS(app, resources={
+    r"/*": {
+        "origins": ["https://main.d2sz63eovkcpdp.amplifyapp.com"],  
+        "methods": ["OPTIONS", "GET", "POST", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+        })    
 
     @app.route("/user")
     def get_all():
