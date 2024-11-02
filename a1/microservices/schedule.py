@@ -40,26 +40,6 @@ def create_app():
             )
         return jsonify({"code": 404, "message": "There are no Schedule."}), 404
 
-    # To get both employee and manager schedule
-    @app.route("/schedule/<int:staff_id>/manager")
-    def get_manager_schedule(staff_id):
-        manager_schedule = db.session.query(Schedule).filter_by(staff_id=staff_id).all()
-        team_schedule = db.session.query(Schedule).filter_by(approved_by=staff_id).all()
-
-        combined_schedule = manager_schedule + team_schedule
-
-        if len(combined_schedule) > 0:
-            return jsonify(
-                {
-                    "code": 200,
-                    "data": {
-                        "manager_schedule": [s.json() for s in manager_schedule],
-                        "team_schedule": [s.json() for s in team_schedule],
-                    },
-                }
-            ), 200
-        return jsonify({"code": 404, "message": "There are no schedule found."}), 404
-
     @app.route("/schedule/team/<int:reporting_manager>")
     def get_team_schedules(reporting_manager):
         try:
@@ -119,9 +99,6 @@ def create_app():
 
         except requests.exceptions.RequestException as e:
             return jsonify({"code": 500, "message": f"Error calling employee service: {str(e)}"}), 500
-
-
-
 
         
     @app.route("/schedule/dept/<string:dept>")

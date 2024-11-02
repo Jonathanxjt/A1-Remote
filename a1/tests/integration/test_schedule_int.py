@@ -23,28 +23,13 @@ def client():
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
         print("Tables in the in-memory database:", tables)
-        # employee = Employee(staff_fname="John", staff_lname="Doe", dept="Sales", position="Sales Manager", country="Singapore", email="john.doe@allinone.com.sg", role=2)
-        # manager = Employee(staff_fname="Emma", staff_lname="Doe", dept="Sales", position="Sales Director", country="Singapore", email="emma.doe@allinone.com.sg", role=3)
-        # db.session.add(employee)
-        # db.session.add(manager)
-        # db.session.flush()
+
         employee = db.session.query(Employee).filter_by(staff_id=999998).first()
         manager = db.session.query(Employee).filter_by(staff_id=999999).first()
         request1 = db.session.query(WorkRequest).filter_by(staff_id=999998).first()
         request2 = db.session.query(WorkRequest).filter_by(staff_id=999998).offset(1).limit(1).first()
         schedule1 = db.session.query(Schedule).filter_by(staff_id=999998).first()
         schedule2 = db.session.query(Schedule).filter_by(staff_id=999998).offset(1).limit(1).first()
-        # request1 = WorkRequest(staff_id=employee.staff_id, request_type="Full Day", request_date=datetime.now(), approval_manager_id=manager.staff_id, reason="Personal work")
-        # request2 = WorkRequest(staff_id=employee.staff_id, request_type="AM", request_date=datetime.now(), approval_manager_id=manager.staff_id, reason="Personal work")
-        # db.session.add(request1)
-        # db.session.add(request2)
-        # db.session.flush()
-        # schedule1 = Schedule(staff_id=employee.staff_id, date=datetime.strptime("2025-10-18", "%Y-%m-%d").date(), approved_by=manager.staff_id, request_id=request1.request_id, request_type="Full Day", status="Pending")
-        # schedule2 = Schedule(staff_id=employee.staff_id, date=datetime.strptime("2025-10-17", "%Y-%m-%d").date(), approved_by=manager.staff_id, request_id=request2.request_id, request_type="AM", status="Pending")
-        # db.session.add(schedule1)
-        # db.session.add(schedule2)
-        # db.session.flush()
-
 
         yield client, employee, manager, request1, request2, schedule1, schedule2
         db.session.remove()
@@ -70,15 +55,6 @@ def test_get_employee_schedule(client):
     assert response.status_code == 200
     assert len(data['data']['work_request']) == db.session.query(Schedule).filter_by(staff_id=employee.staff_id).count()
     assert data['data']['work_request'][0]['request_id'] == schedule1.request_id
-
-# # Test for "/schedule/<int:staff_id>/manager"
-# def test_get_manager_schedule(client):
-#     client, employee, manager, request1, request2, schedule1, schedule2 = client
-#     response = client.get(f"/schedule/{manager.staff_id}/manager")
-#     data = json.loads(response.data)
-#     # assert data == 200
-#     assert response.status_code == 200
-#     assert len(data['data']['manager_schedule']) == 0
 
 # Test for "/schedule/team/<int:reporting_manager>" with mock external employee service
 @patch('requests.get')
@@ -163,7 +139,7 @@ def test_create_schedule_already_exists(client):
     assert "A schedule for this work request already exists." in data['message']
 
 # Test for creating a schedule - POST /schedule/create_schedule [Fail - WFH request must be 1 day before data applied]
-def test_create_schedule_success(client):
+def test_create_schedule_1_day_fail(client):
     client, employee, manager, request1, request2, schedule1, schedule2 = client
     # Add work request to the database
     work_request = WorkRequest(
@@ -183,7 +159,7 @@ def test_create_schedule_success(client):
     assert data['message'] == "The schedule must be created for a date at least 24 hours in advance."
 
 # Test for creating a schedule - POST /schedule/create_schedule [Fail - WFH request must be on Weekday]
-def test_create_schedule_success(client):
+def test_create_schedule_weekend_fail(client):
     client, employee, manager, request1, request2, schedule1, schedule2 = client
     # Add work request to the database
     work_request = WorkRequest(
@@ -274,4 +250,120 @@ def test_update_schedule_status_non_existent_schedule(client):
     assert response.status_code == 404
     assert data['code'] == 404
     assert data['message'] == "Schedule not found."
+
+@patch('requests.get')
+def test_get_dept_schedules_success(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock response for department employees
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "data": {
+            "employee": [
+                {"staff_id": 999998, "staff_fname": "Test_Staff", "staff_lname": "Test_Staff"},
+                {"staff_id": 999999, "staff_fname": "Test_Manager", "staff_lname": "Test_Manager"}
+            ]
+        }
+    }
+
+    response = client.get("/schedule/dept/IT")
+    data = json.loads(response.data)
+
+    assert response.status_code == 200
+    assert len(data['data']) == 2
+    assert data['code'] == 200
+    assert isinstance(data['data'], list)
+    assert 'employee' in data['data'][0]
+    assert 'schedule' in data['data'][0]
+
+@patch('requests.get')
+def test_get_dept_schedules_no_members(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock empty department response
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "data": {
+            "employee": []
+        }
+    }
+
+    response = client.get("/schedule/dept/IT")
+    data = json.loads(response.data)
+
+    assert response.status_code == 404
+    assert data['code'] == 404
+    assert data['message'] == "No team members found."
+
+@patch('requests.get')
+def test_get_dept_schedules_employee_service_error(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock service error
+    mock_get.return_value.status_code = 500
+    mock_get.return_value.json.return_value = {
+        "message": "Internal server error"
+    }
+
+    response = client.get("/schedule/dept/IT")
+    data = json.loads(response.data)
+
+    assert response.status_code == 500
+    assert data['code'] == 500
+    assert "Error fetching team members." in data['message']
+
+@patch('requests.get')
+def test_get_all_schedules_success(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock response for all employees
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "data": {
+            "employee_list": [
+                {"staff_id": 999998, "staff_fname": "Test_Staff", "staff_lname": "Test_Staff"},
+                {"staff_id": 999999, "staff_fname": "Test_Manager", "staff_lname": "Test_Manager"}
+            ]
+        }
+    }
+
+    response = client.get("/schedule/all")
+    data = json.loads(response.data)
+
+    assert response.status_code == 200
+    assert data['code'] == 200
+    assert isinstance(data['data'], list)
+    assert len(data['data']) == 2
+    assert 'employee' in data['data'][0]
+    assert 'schedule' in data['data'][0]
+
+@patch('requests.get')
+def test_get_all_schedules_no_employees(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock empty employee list response
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "data": {
+            "employee_list": []
+        }
+    }
+
+    response = client.get("/schedule/all")
+    data = json.loads(response.data)
+
+    assert response.status_code == 404
+    assert data['code'] == 404
+    assert data['message'] == "No team members found."
+
+@patch('requests.get')
+def test_get_all_schedules_employee_service_error(mock_get, client):
+    client, employee, manager, request1, request2, schedule1, schedule2 = client
+    # Mock service error
+    mock_get.return_value.status_code = 500
+    mock_get.return_value.json.return_value = {
+        "message": "Internal server error"
+    }
+
+    response = client.get("/schedule/all")
+    data = json.loads(response.data)
+
+    assert response.status_code == 500
+    assert data['code'] == 500
+    assert "Error fetching team members." in data['message']
 
