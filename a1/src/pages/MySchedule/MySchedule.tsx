@@ -14,7 +14,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Employee } from "src/Models/Employee";
-import apiUrl from "@/config/api";
+import api from "@/config/api";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const months = [
@@ -131,7 +131,7 @@ export default function Component() {
   const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
       const response = await axios.get(
-        `${apiUrl}:5004/schedule/dept/${department}`
+        `${api.SCHEDULE_URL}/schedule/dept/${department}`
       );
       if (response.data.code === 200) {
         let wfhCountAM = 0;
@@ -191,7 +191,7 @@ export default function Component() {
   const fetchEmployeesInDeptDayView = async () => {
     try {
       const response = await axios.get(
-        `${apiUrl}:5004/schedule/dept/${department}`
+        `${api.SCHEDULE_URL}/schedule/dept/${department}`
       );
       if (response.data.code === 200) {
         const employeesAMList: Employee[] = [];
@@ -267,7 +267,7 @@ export default function Component() {
     const fetchWorkRequests = async () => {
       try {
         const response = await axios.get(
-          `${apiUrl}:5004/schedule/${user.staff_id}/employee`
+          `${api.SCHEDULE_URL}/schedule/${user.staff_id}/employee`
         );
         if (response.data.code === 200) {
           const requests = response.data.data.work_request

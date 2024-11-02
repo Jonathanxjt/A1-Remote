@@ -8,8 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./Login.css";
-import apiUrl from "@/config/api";
-
+import api from "@/config/api";
 interface LoginPageProps {
   onLogin: (staffId: string) => void;
 }
@@ -62,15 +61,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     if (valid) {
       try {
         const response = await axios.post(
-          `${apiUrl}:5001/authenticate`,
+          `${api.USER_URL}/authenticate`,
           {
             email,
             password,
-          },
-          {
-            withCredentials: false,
           }
-          
         );
 
         if (response.data.code === 200) {

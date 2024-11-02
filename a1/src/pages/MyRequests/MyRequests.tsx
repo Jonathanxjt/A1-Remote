@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import apiUrl from "@/config/api";
+import api from "@/config/api";
 
 
 interface Request {
@@ -77,7 +77,7 @@ export default function MyRequests() {
 
   const fetchAllManagers = async () => {
     try {
-      const response = await axios.get(`${apiUrl}:5002/employee`);
+      const response = await axios.get(`${api.EMPLOYEE_URL}/employee`);
       if (response.data.code === 200) {
         const managers = response.data.data.employee_list.filter(
           (emp: { role: number }) => emp.role === 1 || emp.role === 3
@@ -100,7 +100,7 @@ export default function MyRequests() {
       const staffId = sessionStorage.getItem("staff_id");
       if (staffId) {
         const response = await axios.get(
-          `${apiUrl}:5003/work_request/${staffId}/employee`
+          `${api.WORK_REQUEST_URL}/work_request/${staffId}/employee`
         );
         if (response.data.code === 200) {
           setRequests(response.data.data.work_request);
@@ -203,7 +203,7 @@ export default function MyRequests() {
       const request = requests.find((r) => r.request_id === requestId);
       if (request && request.status === "Approved") {
         await axios.put(
-          `${apiUrl}:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+          `${api.SCHEDULER_URL}/scheduler/${requestId}/update_work_request_and_schedule`,
           {
             status: "Withdrawn",
           }
@@ -259,7 +259,7 @@ export default function MyRequests() {
       try {
         if (selectedRequest.status === "Pending") {
           await axios.put(
-            `${apiUrl}:5005/scheduler/${selectedRequest.request_id}/update_work_request_and_schedule`,
+            `${api.SCHEDULER_URL}/scheduler/${selectedRequest.request_id}/update_work_request_and_schedule`,
             {
               status: "Cancelled"
             }

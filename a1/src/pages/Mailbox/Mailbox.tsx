@@ -10,7 +10,7 @@
   import { useEffect, useState } from "react";
   import { Flip, toast } from "react-toastify";
   import "react-toastify/dist/ReactToastify.css";
-  import apiUrl from "@/config/api";
+  import api from "@/config/api";
 
   interface Notification {
     id: number;
@@ -86,7 +86,7 @@
         await Promise.all(
           ids.map((id) =>
             axios.put(
-              `${apiUrl}:5008/notification/read_notification/${id}`
+              `${api.NOTIFICATION_URL}/notification/read_notification/${id}`
             )
           )
         );
@@ -108,7 +108,7 @@
         await Promise.all(
           ids.map((id) =>
             axios.delete(
-              `${apiUrl}:5008/notification/delete_notification/${id}`
+              `${api.NOTIFICATION_URL}/notification/delete_notification/${id}`
             )
           )
         );

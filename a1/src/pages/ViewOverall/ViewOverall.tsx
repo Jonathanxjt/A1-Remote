@@ -13,7 +13,7 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import apiUrl from "@/config/api";
+import api from "@/config/api";
 import { Employee } from "src/Models/Employee";
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -97,8 +97,8 @@ export default function Component() {
     try {
       const endpoint =
         selectedDepartment === "All"
-          ? `${apiUrl}:5004/schedule/all` // Change to employee endpoint when 'All' is selected
-          : `${apiUrl}:5004/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
+          ? `${api.SCHEDULE_URL}/schedule/all` // Change to employee endpoint when 'All' is selected
+          : `${api.SCHEDULE_URL}/schedule/dept/${selectedDepartment}`; // Default to department-specific endpoint
       const response = await axios.get(endpoint);
       if (response.data.code === 200) {
         let wfhCountAM = 0;
@@ -157,8 +157,8 @@ export default function Component() {
     try {
       const endpoint =
         selectedDepartment === "All"
-          ? `${apiUrl}:5004/schedule/all`
-          : `${apiUrl}:5004/schedule/dept/${selectedDepartment}`;
+          ? `${api.SCHEDULE_URL}/schedule/all`
+          : `${api.SCHEDULE_URL}/schedule/dept/${selectedDepartment}`;
       const response = await axios.get(endpoint);
 
       if (response.data.code === 200) {

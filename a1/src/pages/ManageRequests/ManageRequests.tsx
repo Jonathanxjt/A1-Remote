@@ -55,7 +55,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import apiUrl from "@/config/api";
+import api from "@/config/api";
 
 
 interface Request {
@@ -147,7 +147,7 @@ export default function WorkFromHomeRequests() {
   // Fetch all employees and store in a dictionary
   const fetchAllEmployees = async () => {
     try {
-      const response = await axios.get(`${apiUrl}:5002/employee`);
+      const response = await axios.get(`${api.EMPLOYEE_URL}/employee`);
       if (response.data.code === 200) {
         const employees = response.data.data.employee_list;
         const employeeDict: { [key: number]: string } = {};
@@ -172,7 +172,7 @@ export default function WorkFromHomeRequests() {
       const staffId = sessionStorage.getItem("staff_id");
       if (staffId) {
         const response = await axios.get(
-          `${apiUrl}:5003/work_request/${staffId}/manager`
+          `${api.WORK_REQUEST_URL}/work_request/${staffId}/manager`
         );
         if (response.data.code === 200) {
           // First filter for Pending/Approved requests
@@ -329,7 +329,7 @@ export default function WorkFromHomeRequests() {
   const handleApproveRequest = async (requestId: number) => {
     try {
       await axios.put(
-        `${apiUrl}:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+        `${api.SCHEDULER_URL}/scheduler/${requestId}/update_work_request_and_schedule`,
         {
           status: "Approved", // Set the status to 'Approved'
         }
@@ -379,7 +379,7 @@ export default function WorkFromHomeRequests() {
       selectedRequests.map(async (requestId) => {
         try {
           await axios.put(
-            `${apiUrl}:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+            `${api.SCHEDULER_URL}/scheduler/${requestId}/update_work_request_and_schedule`,
             {
               status: "Approved",
             }
@@ -449,7 +449,7 @@ export default function WorkFromHomeRequests() {
 
       if (actionRequest) {
         await axios.put(
-          `${apiUrl}:5005/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
+          `${api.SCHEDULER_URL}/scheduler/${actionRequest.request_id}/update_work_request_and_schedule`,
           {
             status: statusUpdate,
             comments: actionComment,
@@ -518,7 +518,7 @@ export default function WorkFromHomeRequests() {
       selectedRequests.map(async (requestId) => {
         try {
           await axios.put(
-            `${apiUrl}:5005/scheduler/${requestId}/update_work_request_and_schedule`,
+            `${api.SCHEDULER_URL}/scheduler/${requestId}/update_work_request_and_schedule`,
             {
               status: statusUpdate,
               comments: bulkActionComment,
