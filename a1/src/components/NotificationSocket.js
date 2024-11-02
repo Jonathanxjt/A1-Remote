@@ -1,29 +1,48 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { toast, Bounce } from "react-toastify";
 import { io } from "socket.io-client";
 import axios from "axios";
 import api from "@/config/api";
 
-
 export default function NotificationWebSocket({ staffId, setNotifications }) {
   const [socket, setSocket] = useState(null);
-  useEffect(() => {
-    if (!staffId) return;
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const MAX_RECONNECTION_ATTEMPTS = 5;
   
+  useEffect(() => {
+    if (!staffId) {
+      console.log("No staffId provided");
+      return;
+    }
+
+    if (!api.NOTIFICATION_URL) {
+      console.error("Notification URL is not configured");
+      return;
+    }
+
     const fetchInitialNotifications = async () => {
       try {
         const response = await axios.get(`${api.NOTIFICATION_URL}/notification/${staffId}`);
-        if (response.data.code === 200) {
-          setNotifications(response.data.data.Notifications);
+        if (response.data?.code === 200) {
+          setNotifications(response.data.data.Notifications || []);
         }
       } catch (error) {
         console.error("Error fetching initial notifications:", error);
+        if (error.response?.status === 404) {
+          // Handle 404 gracefully - maybe the user has no notifications yet
+          setNotifications([]);
+        }
       }
     };
 
     const initializeWebSocket = () => {
-      const newSocket = io(`${api.NOTIFICATION_URL}`, {
-        reconnectionAttempts: 5,
+      // Ensure we have a valid URL
+      const wsUrl = new URL(api.NOTIFICATION_URL);
+      const protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+      const baseWsUrl = `${protocol}//${wsUrl.host}`;
+
+      const newSocket = io(baseWsUrl, {
+        reconnectionAttempts: MAX_RECONNECTION_ATTEMPTS,
         reconnectionDelay: 2000,
         transports: ['websocket'],
         path: '/socket.io/',
@@ -33,42 +52,65 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
 
       newSocket.on('connect', () => {
         console.log('Connected to notification server');
+        setConnectionAttempts(0);
         newSocket.emit('join', { staff_id: staffId });
       });
 
       newSocket.on('new_notification', (notification) => {
+        if (!notification) return;
+        
         console.log('Received notification:', notification);
-        setNotifications(prev => [...prev, notification]);
+        setNotifications(prev => [...(prev || []), notification]);
         notifyUser(notification);
       });
 
       newSocket.on('connect_error', (error) => {
         console.error("Connection error:", error);
-        if (newSocket.io._reconnectionAttempts < newSocket.io._opts.reconnectionAttempts) {
-          console.log(`Attempting reconnect (${newSocket.io._reconnectionAttempts + 1}/${newSocket.io._opts.reconnectionAttempts})`);
-        } else {
-          console.error("Max reconnection attempts reached");
-        }
+        setConnectionAttempts(prev => {
+          const newAttempts = prev + 1;
+          if (newAttempts >= MAX_RECONNECTION_ATTEMPTS) {
+            console.error("Max reconnection attempts reached");
+            newSocket.close();
+          }
+          return newAttempts;
+        });
       });
 
       newSocket.on('disconnect', (reason) => {
         console.log('Disconnected from notification server:', reason);
+        if (reason === 'io server disconnect') {
+          // Server disconnected us, try to reconnect
+          newSocket.connect();
+        }
+      });
+
+      newSocket.on('error', (error) => {
+        console.error('Socket error:', error);
       });
 
       setSocket(newSocket);
+      
+      return newSocket;
     };
 
+    // Fetch initial notifications first
     fetchInitialNotifications();
-    initializeWebSocket();
+    
+    // Then initialize WebSocket
+    const newSocket = initializeWebSocket();
 
+    // Cleanup function
     return () => {
-      if (socket) {
-        socket.disconnect();
+      if (newSocket) {
+        console.log('Cleaning up socket connection');
+        newSocket.disconnect();
       }
     };
   }, [staffId, setNotifications]);
 
   const notifyUser = (notification) => {
+    if (!notification?.message) return;
+    
     toast.info(
       `${notification.sender_id !== notification.receiver_id ? notification.message : `System: ${notification.message}`}`,
       {
