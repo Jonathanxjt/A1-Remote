@@ -66,7 +66,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           {
             email,
             password,
+          },
+          {
+            withCredentials: false,
           }
+          
         );
 
         if (response.data.code === 200) {
