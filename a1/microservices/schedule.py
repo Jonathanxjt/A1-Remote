@@ -17,7 +17,6 @@ def create_app():
     db.init_app(app)
     CORS(app)
 
-    # Define your routes here or import from another module
     @app.route("/schedule")
     def get_all():
         schedule = db.session.scalars(db.select(Schedule)).all()

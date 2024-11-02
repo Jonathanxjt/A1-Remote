@@ -93,6 +93,21 @@ export default function Component() {
     );
   };
 
+  function getAdjustedDate(date: Date): Date {
+    const day = date.getDay();
+    if (day === 6) {
+      // Saturday
+      // Move to Monday (add 2 days)
+      return new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
+    } else if (day === 0) {
+      // Sunday
+      // Move to Monday (add 1 day)
+      return new Date(date.getTime() + 1 * 24 * 60 * 60 * 1000);
+    }
+    // If it's not Saturday or Sunday, return the same date
+    return date;
+  }
+
   const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
       const endpoint =
@@ -117,22 +132,35 @@ export default function Component() {
               return isSameDay(scheduleDate, date);
             });
 
-            if (todaySchedule.some((s: any) => s.request_type === "Full Day" && s.status === "Approved")) {
+            if (
+              todaySchedule.some(
+                (s: any) =>
+                  s.request_type === "Full Day" && s.status === "Approved"
+              )
+            ) {
               wfhCountAM++;
               wfhCountPM++;
             } else {
-              if (todaySchedule.some((s: any) => s.request_type === "AM" && s.status === "Approved")) {
+              if (
+                todaySchedule.some(
+                  (s: any) => s.request_type === "AM" && s.status === "Approved"
+                )
+              ) {
                 wfhCountAM++; // Employee is WFH for AM
               } else {
                 inOfficeCountAM++; // Employee is in office for AM
               }
-            
-              if (todaySchedule.some((s: any) => s.request_type === "PM" && s.status === "Approved")) {
+
+              if (
+                todaySchedule.some(
+                  (s: any) => s.request_type === "PM" && s.status === "Approved"
+                )
+              ) {
                 wfhCountPM++; // Employee is WFH for PM
               } else {
                 inOfficeCountPM++; // Employee is in office for PM
               }
-            }         
+            }
           }
         });
         return {
@@ -235,7 +263,7 @@ export default function Component() {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
-
+    setCurrentDate(getAdjustedDate(currentDate));
     return () => clearInterval(timer);
   }, [currentDate]);
 
@@ -251,8 +279,8 @@ export default function Component() {
 
   const prev = () => {
     if (currentView === "day") {
-      let previousDate = new Date(currentDate); 
-      previousDate.setDate(previousDate.getDate() - 1); 
+      let previousDate = new Date(currentDate);
+      previousDate.setDate(previousDate.getDate() - 1);
 
       const dayOfWeek = previousDate.getDay();
       if (dayOfWeek === 0) {
@@ -273,8 +301,8 @@ export default function Component() {
 
   const next = () => {
     if (currentView === "day") {
-      let nextDate = new Date(currentDate); 
-      nextDate.setDate(nextDate.getDate() + 1); 
+      let nextDate = new Date(currentDate);
+      nextDate.setDate(nextDate.getDate() + 1);
       const dayOfWeek = nextDate.getDay();
       if (dayOfWeek === 6) {
         nextDate.setDate(nextDate.getDate() + 2);
@@ -598,7 +626,7 @@ export default function Component() {
   };
 
   const renderWeekView = () => {
-    const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     const startOfWeek = new Date(currentDate);
     const dayOfWeek = currentDate.getDay();
     const [weekData, setWeekData] = useState<
@@ -640,53 +668,66 @@ export default function Component() {
           currentDate.setDate(startOfWeek.getDate() + i);
 
           return (
-            <Card key={i} className="p-0">
+            <Card
+              key={i}
+              className="p-0 cursor-pointer"
+              onClick={() => {
+                setCurrentDate(
+                  new Date(currentDate.setDate(currentDate.getDate()))
+                );
+                setCurrentView("day");
+              }}
+            >
               <CardContent className="p-3">
                 <h3 className="font-bold text-xl mb-2">{daysOfWeek[i]}</h3>
                 <p className="text-sm mb-2">
                   {currentDate.toLocaleDateString()}{" "}
                 </p>
 
-                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
-                  {" "}
-                  <h4 className="font-bold">AM:</h4>
-                  <div className="flex justify-around items-center w-full pt-2">
-                    {" "}
-                    <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">
-                        {dayCount?.wfhCountAM}
-                      </p>
-                    </div>
-                    <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">
-                        Office:
-                      </p>
-                      <p className="text-xl text-center">
-                        {dayCount?.inOfficeCountAM}
-                      </p>
+                <div className="mt-4 mb-2 bg-blue-100 p-3 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold">AM:</h4>
+                    <div className="flex justify-around items-center w-full">
+                      <div className="flex-1 border-r border-gray-300 pr-2">
+                        <p className="text-sm text-center text-gray-500">
+                          WFH:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.wfhCountAM}
+                        </p>
+                      </div>
+                      <div className="flex-1 pl-2">
+                        <p className="text-sm text-center text-gray-500">
+                          Office:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.inOfficeCountAM}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 mb-2 bg-gray-100 p-2 rounded-md">
-                  {" "}
-                  <h4 className="font-bold">PM:</h4>
-                  <div className="flex justify-around items-center w-full pt-2">
-                    {" "}
-                    <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">
-                        {dayCount?.wfhCountPM}
-                      </p>
-                    </div>
-                    <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">
-                        Office:
-                      </p>
-                      <p className="text-xl text-center">
-                        {dayCount?.inOfficeCountPM}
-                      </p>
+                <div className="mt-4 mb-2 bg-pink-100 p-3 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold">PM:</h4>
+                    <div className="flex justify-around items-center w-full">
+                      <div className="flex-1 border-r border-gray-300 pr-2">
+                        <p className="text-sm text-center text-gray-500">
+                          WFH:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.wfhCountPM}
+                        </p>
+                      </div>
+                      <div className="flex-1 pl-2">
+                        <p className="text-sm text-center text-gray-500">
+                          Office:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.inOfficeCountPM}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -759,12 +800,12 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${
-                        months[currentDate.getMonth()]
+                    ? `${getAdjustedDate(currentDate).getDate()} ${
+                        months[getAdjustedDate(currentDate).getMonth()]
                       }`
                     : `${
-                        months[currentDate.getMonth()]
-                      } ${currentDate.getFullYear()}`}{" "}
+                        months[getAdjustedDate(currentDate).getMonth()]
+                      } ${getAdjustedDate(currentDate).getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>
