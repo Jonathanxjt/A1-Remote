@@ -204,7 +204,6 @@ const Sidebar: React.FC<SidebarProps> = ({ notifications, onLogout }) => {
   );
 };
 
-// Refactored NavItem component for clarity and reusability
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;

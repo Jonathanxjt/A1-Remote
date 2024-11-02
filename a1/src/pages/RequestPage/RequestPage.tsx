@@ -40,6 +40,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Flip, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import apiUrl from "@/config/api";
 
 export default function WorkFromHomeForm() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function WorkFromHomeForm() {
       const staffId = sessionStorage.getItem("staff_id");
       if (staffId) {
         const response = await axios.get(
-          `http://localhost:5003/work_request/${staffId}/employee`
+          `${apiUrl}:5003/work_request/${staffId}/employee`
         );
 
         if (response.data.code === 200) {
@@ -150,7 +151,7 @@ export default function WorkFromHomeForm() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5005/New_WR",
+        `${apiUrl}:5005/New_WR`,
         requestData
       );
 

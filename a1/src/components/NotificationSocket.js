@@ -2,6 +2,8 @@ import { useEffect,useState } from "react";
 import { toast, Bounce } from "react-toastify";
 import { io } from "socket.io-client";
 import axios from "axios";
+import apiUrl from "@/config/api";
+
 
 export default function NotificationWebSocket({ staffId, setNotifications }) {
   const [socket, setSocket] = useState(null);
@@ -10,7 +12,7 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
   
     const fetchInitialNotifications = async () => {
       try {
-        const response = await axios.get(`http://localhost:5008/notification/${staffId}`);
+        const response = await axios.get(`${apiUrl}:5008/notification/${staffId}`);
         if (response.data.code === 200) {
           setNotifications(response.data.data.Notifications);
         }
@@ -20,7 +22,7 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
     };
 
     const initializeWebSocket = () => {
-      const newSocket = io('http://localhost:5008', {
+      const newSocket = io(`${apiUrl}:5008`, {
         reconnectionAttempts: 5,
         reconnectionDelay: 2000,
         transports: ['websocket'],

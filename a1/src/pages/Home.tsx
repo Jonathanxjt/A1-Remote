@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import apiUrl from "@/config/api";
 
 
 interface EmployeeData {
@@ -28,7 +29,7 @@ export default function HomePage() {
 
   const fetchEmployeeData = async (staff_id : string) => {
     try {
-      const response = await axios.get(`http://localhost:5002/employee/${staff_id}`);
+      const response = await axios.get(`${apiUrl}:5002/employee/${staff_id}`);
 
       if (response.data.code === 200) {
         // Remove the "employee" key and directly store the data in sessionStorage
