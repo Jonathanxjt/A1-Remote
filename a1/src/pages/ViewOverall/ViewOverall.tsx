@@ -93,6 +93,21 @@ export default function Component() {
     );
   };
 
+  function getAdjustedDate(date: Date): Date {
+    const day = date.getDay();
+    if (day === 6) {
+      // Saturday
+      // Move to Monday (add 2 days)
+      return new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
+    } else if (day === 0) {
+      // Sunday
+      // Move to Monday (add 1 day)
+      return new Date(date.getTime() + 1 * 24 * 60 * 60 * 1000);
+    }
+    // If it's not Saturday or Sunday, return the same date
+    return date;
+  }
+
   const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
       const endpoint =
@@ -248,7 +263,7 @@ export default function Component() {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
-
+    setCurrentDate(getAdjustedDate(currentDate));
     return () => clearInterval(timer);
   }, [currentDate]);
 
@@ -653,7 +668,16 @@ export default function Component() {
           currentDate.setDate(startOfWeek.getDate() + i);
 
           return (
-            <Card key={i} className="p-0">
+            <Card
+              key={i}
+              className="p-0 cursor-pointer"
+              onClick={() => {
+                setCurrentDate(
+                  new Date(currentDate.setDate(currentDate.getDate()))
+                );
+                setCurrentView("day");
+              }}
+            >
               <CardContent className="p-3">
                 <h3 className="font-bold text-xl mb-2">{daysOfWeek[i]}</h3>
                 <p className="text-sm mb-2">
@@ -776,12 +800,12 @@ export default function Component() {
 
                 <h2 className="text-lg sm:text-xl font-semibold whitespace-nowrap">
                   {currentView === "day"
-                    ? `${currentDate.getDate()} ${
-                        months[currentDate.getMonth()]
+                    ? `${getAdjustedDate(currentDate).getDate()} ${
+                        months[getAdjustedDate(currentDate).getMonth()]
                       }`
                     : `${
-                        months[currentDate.getMonth()]
-                      } ${currentDate.getFullYear()}`}{" "}
+                        months[getAdjustedDate(currentDate).getMonth()]
+                      } ${getAdjustedDate(currentDate).getFullYear()}`}{" "}
                 </h2>
                 {currentView !== "week" && (
                   <Button variant="outline" size="icon" onClick={next}>

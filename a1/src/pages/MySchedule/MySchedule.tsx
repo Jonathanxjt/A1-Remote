@@ -44,9 +44,7 @@ interface WorkRequest {
   type: WorkStatus;
   status: WorkStatus;
   reportingManager: string;
-  
 }
-
 
 interface RequestX {
   request_id: number;
@@ -70,7 +68,6 @@ interface Schedule {
   staff_id: number;
   status: string;
 }
-
 
 export default function Component() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -128,6 +125,21 @@ export default function Component() {
     );
   };
 
+  function getAdjustedDate(date: Date): Date {
+    const day = date.getDay();
+    if (day === 6) {
+      // Saturday
+      // Move to Monday (add 2 days)
+      return new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
+    } else if (day === 0) {
+      // Sunday
+      // Move to Monday (add 1 day)
+      return new Date(date.getTime() + 1 * 24 * 60 * 60 * 1000);
+    }
+    // If it's not Saturday or Sunday, return the same date
+    return date;
+  }
+
   const fetchEmployeesInDeptWeekView = async (date: Date) => {
     try {
       const response = await axios.get(
@@ -139,36 +151,52 @@ export default function Component() {
         let wfhCountPM = 0;
         let inOfficeCountPM = 0;
 
-        response.data.data.forEach((item: { employee: Employee; schedule: Schedule[] | undefined}) => {
-          const schedule = item.schedule;
-          if (!Array.isArray(schedule) || schedule.length === 0) {
-            inOfficeCountAM += 1;
-            inOfficeCountPM += 1;
-          } else {
-            const todaySchedule = schedule.filter((s: Schedule) => {
-              const scheduleDate = new Date(s.date);
-              return isSameDay(scheduleDate, date);
-            });
-
-         
-            if (todaySchedule.some((s: Schedule) => s.request_type === "Full Day" && s.status === "Approved")) {
-              wfhCountAM++;
-              wfhCountPM++;
+        response.data.data.forEach(
+          (item: { employee: Employee; schedule: Schedule[] | undefined }) => {
+            const schedule = item.schedule;
+            if (!Array.isArray(schedule) || schedule.length === 0) {
+              inOfficeCountAM += 1;
+              inOfficeCountPM += 1;
             } else {
-              if (todaySchedule.some((s: Schedule) => s.request_type === "AM" && s.status === "Approved")) {
-                wfhCountAM++; // Employee is WFH for AM
+              const todaySchedule = schedule.filter((s: Schedule) => {
+                const scheduleDate = new Date(s.date);
+                return isSameDay(scheduleDate, date);
+              });
+
+              if (
+                todaySchedule.some(
+                  (s: Schedule) =>
+                    s.request_type === "Full Day" && s.status === "Approved"
+                )
+              ) {
+                wfhCountAM++;
+                wfhCountPM++;
               } else {
-                inOfficeCountAM++; // Employee is in office for AM
+                if (
+                  todaySchedule.some(
+                    (s: Schedule) =>
+                      s.request_type === "AM" && s.status === "Approved"
+                  )
+                ) {
+                  wfhCountAM++; // Employee is WFH for AM
+                } else {
+                  inOfficeCountAM++; // Employee is in office for AM
+                }
+
+                if (
+                  todaySchedule.some(
+                    (s: Schedule) =>
+                      s.request_type === "PM" && s.status === "Approved"
+                  )
+                ) {
+                  wfhCountPM++; // Employee is WFH for PM
+                } else {
+                  inOfficeCountPM++; // Employee is in office for PM
+                }
               }
-            
-              if (todaySchedule.some((s: Schedule) => s.request_type === "PM" && s.status === "Approved")) {
-                wfhCountPM++; // Employee is WFH for PM
-              } else {
-                inOfficeCountPM++; // Employee is in office for PM
-              }
-            }   
+            }
           }
-        });
+        );
 
         return {
           wfhCountAM,
@@ -197,64 +225,68 @@ export default function Component() {
         const employeesAMList: Employee[] = [];
         const employeesPMList: Employee[] = [];
 
-        response.data.data.forEach((item: { employee: Employee; schedule: Schedule[] | undefined}) => {
-          const employee = item.employee;
-          const schedule = item.schedule;
+        response.data.data.forEach(
+          (item: { employee: Employee; schedule: Schedule[] | undefined }) => {
+            const employee = item.employee;
+            const schedule = item.schedule;
 
-          const employeeData: Employee = {
-            staff_id: employee.staff_id,
-            staff_fname: employee.staff_fname,
-            staff_lname: employee.staff_lname,
-            id: employee.staff_id,
-            fullName: `${employee.staff_fname} ${employee.staff_lname}`,
-            status: "In Office",
-            email: employee.email,
-            position: employee.position,
-          };
+            const employeeData: Employee = {
+              staff_id: employee.staff_id,
+              staff_fname: employee.staff_fname,
+              staff_lname: employee.staff_lname,
+              id: employee.staff_id,
+              fullName: `${employee.staff_fname} ${employee.staff_lname}`,
+              status: "In Office",
+              email: employee.email,
+              position: employee.position,
+            };
 
-          if (!Array.isArray(schedule) || schedule.length === 0) {
-            employeesAMList.push(employeeData);
-            employeesPMList.push(employeeData);
-          } else {
-            const todaySchedule = schedule.filter((s: Schedule) => {
-              const scheduleDate = new Date(s.date);
-              return isSameDay(scheduleDate, currentDate);
-            });
-
-            const hasAM = todaySchedule.some(
-              (s: Schedule) => s.request_type === "AM" && s.status === "Approved"
-            );
-            const hasPM = todaySchedule.some(
-              (s: Schedule) => s.request_type === "PM" && s.status === "Approved"
-            );
-            const isFullDay = todaySchedule.some(
-              (s: Schedule) =>
-                s.request_type === "Full Day" && s.status === "Approved"
-            );
-
-            if (hasAM) {
-              employeeData.status = "AM";
-              employeesAMList.push(employeeData);
-              employeeData.status = "In Office";
-              employeesPMList.push(employeeData);
-            }
-            if (hasPM) {
-              employeeData.status = "PM";
-              employeesPMList.push(employeeData);
-              employeeData.status = "In Office";
-              employeesAMList.push(employeeData);
-            }
-            if (isFullDay) {
-              employeeData.status = "Full";
+            if (!Array.isArray(schedule) || schedule.length === 0) {
               employeesAMList.push(employeeData);
               employeesPMList.push(employeeData);
-            }
-            if (!hasAM && !hasPM && !isFullDay) {
-              employeesAMList.push(employeeData);
-              employeesPMList.push(employeeData);
+            } else {
+              const todaySchedule = schedule.filter((s: Schedule) => {
+                const scheduleDate = new Date(s.date);
+                return isSameDay(scheduleDate, currentDate);
+              });
+
+              const hasAM = todaySchedule.some(
+                (s: Schedule) =>
+                  s.request_type === "AM" && s.status === "Approved"
+              );
+              const hasPM = todaySchedule.some(
+                (s: Schedule) =>
+                  s.request_type === "PM" && s.status === "Approved"
+              );
+              const isFullDay = todaySchedule.some(
+                (s: Schedule) =>
+                  s.request_type === "Full Day" && s.status === "Approved"
+              );
+
+              if (hasAM) {
+                employeeData.status = "AM";
+                employeesAMList.push(employeeData);
+                employeeData.status = "In Office";
+                employeesPMList.push(employeeData);
+              }
+              if (hasPM) {
+                employeeData.status = "PM";
+                employeesPMList.push(employeeData);
+                employeeData.status = "In Office";
+                employeesAMList.push(employeeData);
+              }
+              if (isFullDay) {
+                employeeData.status = "Full";
+                employeesAMList.push(employeeData);
+                employeesPMList.push(employeeData);
+              }
+              if (!hasAM && !hasPM && !isFullDay) {
+                employeesAMList.push(employeeData);
+                employeesPMList.push(employeeData);
+              }
             }
           }
-        });
+        );
         setEmployeesAM(employeesAMList);
         setEmployeesPM(employeesPMList);
       }
@@ -272,7 +304,7 @@ export default function Component() {
         if (response.data.code === 200) {
           const requests = response.data.data.work_request
             .filter(
-              (request : RequestX  ) =>
+              (request: RequestX) =>
                 request.status === "Approved" || request.status === "Pending"
             )
             .map((request: RequestX) => ({
@@ -297,7 +329,7 @@ export default function Component() {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000);
-
+    setCurrentDate(getAdjustedDate(currentDate));
     return () => clearInterval(timer);
   }, [currentDate]);
 
@@ -725,6 +757,7 @@ export default function Component() {
 
     useEffect(() => {
       const fetchWeekData = async () => {
+        setLoading(true);
         let data = [];
         for (let i = 0; i < 5; i++) {
           const date = startOfWeek;
@@ -751,52 +784,66 @@ export default function Component() {
           currentDate.setDate(startOfWeek.getDate() + i);
 
           return (
-            <Card key={i} className="p-0">
+            <Card
+              key={i}
+              className="p-0 cursor-pointer"
+              onClick={() => {
+                setCurrentDate(
+                  new Date(currentDate.setDate(currentDate.getDate()))
+                );
+                setCurrentView("day");
+              }}
+            >
               <CardContent className="p-3">
                 <h3 className="font-bold text-xl mb-2">{daysOfWeek[i]}</h3>
-                <p className="text-md mb-2">
+                <p className="text-sm mb-2">
                   {currentDate.toLocaleDateString()}{" "}
                 </p>
-                <div className="mt-4 mb-2 bg-blue-200 p-2 rounded-md">
-                  {" "}
-                  <h4 className="font-bold">AM:</h4>
-                  <div className="flex justify-around items-center w-full pt-2">
-                    {" "}
-                    <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">
-                        {dayCount?.wfhCountAM}
-                      </p>
-                    </div>
-                    <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">
-                        Office:
-                      </p>
-                      <p className="text-xl text-center">
-                        {dayCount?.inOfficeCountAM}
-                      </p>
+
+                <div className="mt-4 mb-2 bg-blue-100 p-3 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold">AM:</h4>
+                    <div className="flex justify-around items-center w-full">
+                      <div className="flex-1 border-r border-gray-300 pr-2">
+                        <p className="text-sm text-center text-gray-500">
+                          WFH:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.wfhCountAM}
+                        </p>
+                      </div>
+                      <div className="flex-1 pl-2">
+                        <p className="text-sm text-center text-gray-500">
+                          Office:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.inOfficeCountAM}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 mb-2 bg-pink-200 p-2 rounded-md">
-                  {" "}
-                  <h4 className="font-bold">PM:</h4>
-                  <div className="flex justify-around items-center w-full pt-2">
-                    {" "}
-                    <div className="flex-1 border-r border-gray-300 pr-2">
-                      <p className="text-sm text-center text-gray-500">WFH:</p>
-                      <p className="text-xl text-center">
-                        {dayCount?.wfhCountPM}
-                      </p>
-                    </div>
-                    <div className="flex-1 pl-2">
-                      <p className="text-sm text-center text-gray-500">
-                        Office:
-                      </p>
-                      <p className="text-xl text-center">
-                        {dayCount?.inOfficeCountPM}
-                      </p>
+                <div className="mt-4 mb-2 bg-pink-100 p-3 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold">PM:</h4>
+                    <div className="flex justify-around items-center w-full">
+                      <div className="flex-1 border-r border-gray-300 pr-2">
+                        <p className="text-sm text-center text-gray-500">
+                          WFH:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.wfhCountPM}
+                        </p>
+                      </div>
+                      <div className="flex-1 pl-2">
+                        <p className="text-sm text-center text-gray-500">
+                          Office:
+                        </p>
+                        <p className="text-xl text-center">
+                          {dayCount?.inOfficeCountPM}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
