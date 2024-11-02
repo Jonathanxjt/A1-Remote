@@ -70,7 +70,6 @@ def create_app():
         user = db.session.query(User).filter_by(email=email).first()
 
         if user:
-            # Assuming user.password is the hashed password
             if bcrypt.checkpw(password, user.password.encode('utf-8')):
                 return jsonify({
                     "code": 200,
