@@ -18,11 +18,12 @@ def create_app():
     db.init_app(app)
     CORS(app, resources={
     r"/*": {
-        "origins": ["https://main.d2sz63eovkcpdp.amplifyapp.com"],  
+        "origins": ["https://main.d2sz63eovkcpdp.amplifyapp.com"],
         "methods": ["OPTIONS", "GET", "POST", "PUT", "DELETE"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
     }
-        })    
+})
 
     @app.route("/user")
     def get_all():
