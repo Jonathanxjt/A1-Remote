@@ -9,7 +9,7 @@ interface EmployeeStatusPieChartProps {
 
 const EmployeeStatusPieChart: React.FC<EmployeeStatusPieChartProps> =
   React.memo(({ employees }) => {
-    console.log("Rendering EmployeeStatusPieChart");
+
 
     // Count the number of employees for each status
     // this will need to be updated to use the actual data so instead of 'WFH' it will check full day am or pm

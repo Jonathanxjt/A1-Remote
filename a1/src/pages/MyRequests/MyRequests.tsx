@@ -111,7 +111,7 @@ export default function MyRequests() {
           );
         }
       } else {
-        console.error("No staff_id found in sessionStorage.");
+        console.error("Error fetching work requests");
       }
     } catch (error) {
       console.error("Error fetching work requests: ", error);

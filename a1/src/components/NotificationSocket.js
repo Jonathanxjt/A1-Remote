@@ -11,7 +11,6 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
   
   useEffect(() => {
     if (!staffId) {
-      console.log("No staffId provided");
       return;
     }
 
@@ -51,15 +50,12 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
       });
 
       newSocket.on('connect', () => {
-        console.log('Connected to notification server');
         setConnectionAttempts(0);
         newSocket.emit('join', { staff_id: staffId });
       });
 
       newSocket.on('new_notification', (notification) => {
         if (!notification) return;
-        
-        console.log('Received notification:', notification);
         setNotifications(prev => [...(prev || []), notification]);
         notifyUser(notification);
       });
@@ -77,7 +73,6 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log('Disconnected from notification server:', reason);
         if (reason === 'io server disconnect') {
           // Server disconnected us, try to reconnect
           newSocket.connect();
@@ -102,7 +97,6 @@ export default function NotificationWebSocket({ staffId, setNotifications }) {
     // Cleanup function
     return () => {
       if (newSocket) {
-        console.log('Cleaning up socket connection');
         newSocket.disconnect();
       }
     };

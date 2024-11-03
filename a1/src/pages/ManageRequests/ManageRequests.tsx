@@ -84,7 +84,7 @@ export default function WorkFromHomeRequests() {
 
     if (userData) {
       const user = JSON.parse(userData);
-      console.log(user);
+
       if (user.role !== 1 && user.role !== 3) {
         navigate("/");
         return;
@@ -141,7 +141,7 @@ export default function WorkFromHomeRequests() {
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    console.log(`Selected status: ${value}`);
+
   };
 
   // Fetch all employees and store in a dictionary
@@ -212,12 +212,12 @@ export default function WorkFromHomeRequests() {
           });
 
           setRequests(processedRequests);
-          console.log("Processed requests:", processedRequests);
+
         } else {
           console.error("Error fetching work requests:", response.data.message);
         }
       } else {
-        console.error("No staff_id found in sessionStorage.");
+        console.error("Error fetching work requests:");
       }
     } catch (error) {
       console.error("Error fetching work requests:", error);
@@ -425,7 +425,6 @@ export default function WorkFromHomeRequests() {
 
   // Open modal for both reject and revoke actions
   const openActionModal = (request: Request, type: "reject" | "revoke") => {
-    console.log(`${type} request:`, request);
     setActionType(type);
     setActionRequest(request);
     setIsActionModalOpen(true);
@@ -439,13 +438,6 @@ export default function WorkFromHomeRequests() {
   const handleActionWithComment = async () => {
     try {
       const statusUpdate = actionType === "reject" ? "Rejected" : "Revoked";
-
-      console.log(
-        `${statusUpdate} request:`,
-        actionRequest,
-        "with comment:",
-        actionComment
-      );
 
       if (actionRequest) {
         await axios.put(

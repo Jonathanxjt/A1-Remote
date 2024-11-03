@@ -63,7 +63,6 @@ export default function WorkFromHomeForm() {
         if (response.data.code === 200) {
           const startOfSelectedWeek = startOfDay(startOfWeek(date, { weekStartsOn: 1 }));
           const endOfSelectedWeek = endOfDay(endOfWeek(date, { weekStartsOn: 1 }));
-          console.log("Selected week:", startOfSelectedWeek, endOfSelectedWeek);
           const filteredRequests = response.data.data.work_request.filter(
             (request: any) => {
               const requestDate = new Date(request.request_date)
@@ -78,7 +77,6 @@ export default function WorkFromHomeForm() {
           );
 
           setRequests(filteredRequests);
-          console.log("Filtered work requests for the selected week:", filteredRequests);
           setExceed(filteredRequests.length >= 2);
         } else {
           console.error("Error fetching work requests:", response.data.message);

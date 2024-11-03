@@ -69,7 +69,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         );
 
         if (response.data.code === 200) {
-          console.log("Sign In Successful");
+
           const staffId = response.data.data.user.staff_id;
           sessionStorage.setItem("staff_id", staffId);
 

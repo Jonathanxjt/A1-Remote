@@ -319,7 +319,7 @@ export default function Component() {
             }));
           setWorkRequests(requests);
         } else {
-          console.log("No work requests found.");
+          console.error("Error fetching work requests:", response.data.message);
         }
       } catch (error) {
         console.error("Error fetching work requests:", error);
@@ -355,6 +355,7 @@ export default function Component() {
         previousDate.setDate(previousDate.getDate() - 1);
       }
       setCurrentDate(previousDate);
+      setSelectedDate(previousDate);
     } else if (currentView === "month") {
       const previousMonthDate = new Date(
         currentDate.getFullYear(),
@@ -487,7 +488,6 @@ export default function Component() {
           onClick={() => {
             if (!isWeekend) {
               handleDateSelection(date);
-              console.log("Date selected:", date);
             }
           }}
         >
@@ -788,9 +788,9 @@ export default function Component() {
               key={i}
               className="p-0 cursor-pointer"
               onClick={() => {
-                setCurrentDate(
-                  new Date(currentDate.setDate(currentDate.getDate()))
-                );
+                const newDate = new Date(currentDate.setDate(currentDate.getDate()));
+                setCurrentDate(newDate);
+                setSelectedDate(newDate); // Add this line
                 setCurrentView("day");
               }}
             >

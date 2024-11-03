@@ -38,7 +38,7 @@
 
           // Set the employee data in the state for display or further use
           setUserData(employeeData);
-          console.log("Employee data fetched successfully:", employeeData);
+
         } else {
           console.error("Error fetching employee data:", response.data.message);
         }
