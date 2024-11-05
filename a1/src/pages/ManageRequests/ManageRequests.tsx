@@ -216,7 +216,6 @@ export default function WorkFromHomeRequests() {
 						} else {
 							request.exceeded = false;
 						}
-						console.log(weekArray);
 						weekArray.push(request);
 						weekRequests.set(weekKey, weekArray);
 
