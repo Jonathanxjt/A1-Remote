@@ -166,11 +166,6 @@ DATABASE_URL=mysql+mysqlconnector://root:password123@host.docker.internal:3306/a
 - **Matthew James** - [GitHub](https://github.com/matthewaeria)
 
 
-## 🙏 Acknowledgments
-- Special thanks to [Shadcn/ui](https://github.com/shadcn/ui) for UI inspiration
-- Certainly! Here’s the Acknowledgments section with links added for Jira and Confluence:
-
----
 
 ## 🙏 Acknowledgments
 - Special thanks to [Shadcn/ui](https://github.com/shadcn/ui) for providing UI inspiration.
