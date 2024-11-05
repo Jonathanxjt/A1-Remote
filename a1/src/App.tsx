@@ -6,6 +6,7 @@ import "./App.css";
 import Footer from "./components/footer.tsx";
 // @ts-ignore
 import { useNavigate } from "react-router-dom";
+// @ts-ignore
 import NotificationSocket from "./components/NotificationSocket.js";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home";

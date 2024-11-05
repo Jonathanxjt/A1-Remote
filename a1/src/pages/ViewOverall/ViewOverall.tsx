@@ -194,6 +194,7 @@ export default function Component() {
 						status: "In Office",
 						email: employee.email,
 						position: employee.position,
+						reporting_manager: employee.reporting_manager, 
 					};
 
 					if (!schedule || schedule === "No schedule found.") {

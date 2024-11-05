@@ -130,16 +130,27 @@ export default function Component() {
 
 	const fetchEmployeesInDeptWeekView = async (date: Date) => {
 		try {
-			const response = await axios.get(
-				`${api.SCHEDULE_URL}/schedule/dept/${department}`
-			);
+			const endpoint = (user.staff_id === 130002 || user.dept === "CEO")
+				? `${api.SCHEDULE_URL}/schedule/team/130002`
+				: `${api.SCHEDULE_URL}/schedule/dept/${department}`;
+
+			const response = await axios.get(endpoint);
 			if (response.data.code === 200) {
 				let wfhCountAM = 0;
 				let inOfficeCountAM = 0;
 				let wfhCountPM = 0;
 				let inOfficeCountPM = 0;
 
-				response.data.data.forEach(
+				// Remove duplicates based on staff_id
+				const filteredData = response.data.data.filter(
+					(entry: { employee: Employee; schedule: Schedule[] | undefined }, 
+					 index: number, 
+					 self: { employee: Employee; schedule: Schedule[] | undefined }[]) =>
+						index === self.findIndex(t => t.employee.staff_id === entry.employee.staff_id)
+				);
+
+				// Process the filtered data
+				filteredData.forEach(
 					(item: { employee: Employee; schedule: Schedule[] | undefined }) => {
 						const schedule = item.schedule;
 						if (!Array.isArray(schedule) || schedule.length === 0) {
@@ -206,14 +217,25 @@ export default function Component() {
 
 	const fetchEmployeesInDeptDayView = async () => {
 		try {
-			const response = await axios.get(
-				`${api.SCHEDULE_URL}/schedule/dept/${department}`
-			);
+			const endpoint = (user.staff_id === 130002 || user.dept === "CEO")
+				? `${api.SCHEDULE_URL}/schedule/team/130002`
+				: `${api.SCHEDULE_URL}/schedule/dept/${department}`;
+			
+			const response = await axios.get(endpoint);
 			if (response.data.code === 200) {
 				const employeesAMList: Employee[] = [];
 				const employeesPMList: Employee[] = [];
 
-				response.data.data.forEach(
+				// Remove duplicates based on staff_id
+				const filteredData = response.data.data.filter(
+					(entry: { employee: Employee; schedule: Schedule[] | undefined }, 
+					 index: number, 
+					 self: { employee: Employee; schedule: Schedule[] | undefined }[]) =>
+						index === self.findIndex(t => t.employee.staff_id === entry.employee.staff_id)
+				);
+
+				// Process the filtered data
+				filteredData.forEach(
 					(item: { employee: Employee; schedule: Schedule[] | undefined }) => {
 						const employee = item.employee;
 						const schedule = item.schedule;
@@ -227,6 +249,7 @@ export default function Component() {
 							status: "In Office",
 							email: employee.email,
 							position: employee.position,
+							reporting_manager: employee.reporting_manager,
 						};
 
 						if (!Array.isArray(schedule) || schedule.length === 0) {
