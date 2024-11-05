@@ -71,7 +71,7 @@ A1-Remote is a modern Work From Home (WFH) management system designed to help or
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/a1-remote.git
+git clone https://github.com/Jonathanxjt/a1-remote.git
 cd a1-remote/a1
 ```
 

@@ -1,15 +1,18 @@
+import asyncio
 import json
-import pytest
-from datetime import datetime
-import sys
 import os
+import sys
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+import pytest
+from flask_socketio import SocketIO, SocketIOTestClient
 from sqlalchemy import inspect
-from flask_socketio import SocketIOTestClient
-from unittest.mock import patch
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../microservices')))
 
+from models import Employee, Notification, WorkRequest, db
 from notification import create_app
-from models import Employee, WorkRequest, Notification, db
+
 
 @pytest.fixture
 def client():
@@ -52,6 +55,16 @@ def client():
         db.session.rollback()
         db.session.remove()
 
+@pytest.fixture
+def socketio_client(client):
+    app, socketio = create_app()
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Create a test client for Socket.IO
+    socket_client = socketio.test_client(app)
+    
+    return socket_client, app, socketio
+
 # Test GET /notification/<int:receiver_id>
 def test_get_staff_notifications(client):
     client, employee, manager, work_request, notification1, notification2 = client
@@ -64,27 +77,30 @@ def test_get_staff_notifications(client):
     assert data['data']['Notifications'][0]['receiver_id'] == employee.staff_id
 
 # Test POST /notification/create_notification - Success case
-# def test_create_notification_success(client):
-#     client, employee, manager, work_request, notification1, notification2 = client
+def test_create_notification_success(client):
+    client, employee, manager, work_request, notification1, notification2 = client
     
-#     notification_data = {
-#         'sender_id': manager.staff_id,
-#         'receiver_id': employee.staff_id,
-#         'request_id': work_request.request_id,
-#         'request_type': 'Full Day',
-#         'status': 'Pending',
-#         'request_date': '2025-10-17'
-#     }
+    notification_data = {
+        'sender_id': manager.staff_id,
+        'receiver_id': employee.staff_id,
+        'request_id': work_request.request_id,
+        'request_type': 'Full Day',
+        'status': 'Pending',
+        'request_date': '2025-10-17'
+    }
     
-#     response = client.post('/notification/create_notification', 
-#                           json=notification_data,
-#                           content_type='application/json')
-#     data = json.loads(response.data)
+    response = client.post('/notification/create_notification', 
+                          json=notification_data,
+                          content_type='application/json')
+    data = json.loads(response.data)
     
-#     assert response.status_code == 201
-#     assert data['code'] == 201
-#     assert len(data['data']) >= db.session.query(Notification).filter_by(receiver_id=employee.staff_id).count()
-#     assert data['message'] == "Notification(s) created successfully"
+    assert response.status_code == 201
+    assert data['code'] == 201
+    assert db.session.query(Notification).filter_by(
+        receiver_id=employee.staff_id,
+        request_id=work_request.request_id
+    ).count() >= len(data['data'])
+    assert data['message'] == "Notification(s) created successfully"
 
 
 # Test POST /notification/create_notification - Missing required fields
@@ -295,3 +311,34 @@ def test_create_notification_missing_request_date(client):
     # Cleanup: delete all notifications sent by the manager
     db.session.query(Notification).filter_by(sender_id=manager.staff_id).delete()
     db.session.commit()
+
+# Test Socket.IO connection
+def test_socketio_connection(socketio_client):
+    socket_client, _, _ = socketio_client
+    
+    assert socket_client.is_connected()
+
+# Test joining a room
+def test_join_room(socketio_client):
+    socket_client, _, _ = socketio_client
+    
+    # Emit join event with staff_id
+    socket_client.emit('join', {'staff_id': 999998})
+    
+    # Get the received message (if any)
+    received = socket_client.get_received()
+    
+    # Verify connection is still active after joining
+    assert socket_client.is_connected()
+
+# Test WebSocket disconnection
+def test_socketio_disconnect(socketio_client):
+    socket_client, _, _ = socketio_client
+    
+    # Disconnect the client
+    socket_client.disconnect()
+    
+    # Verify the client is disconnected
+    assert not socket_client.is_connected()
+
+
