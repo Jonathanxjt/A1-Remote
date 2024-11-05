@@ -1,58 +1,59 @@
-html, body {
-    height: 100%;
-    margin: 0;
+html,
+body {
+	height: 100%;
+	margin: 0;
 }
 
 .maincontainer {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh; /* Full viewport height */
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh; /* Full viewport height */
 }
 
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 16rem;
-    background-color: white;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: width 0.3s;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 16rem;
+	background-color: white;
+	box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+	transition: width 0.3s;
+	display: flex;
+	flex-direction: column;
+	z-index: 1000;
 }
 
 .sidebar.collapsed {
-    width: 5rem;
+	width: 5rem;
 }
 
 .main-content {
-    margin-left: 16rem; /* Adjust based on sidebar width */
-    padding: 1rem;
-    flex-grow: 1; /* This ensures the content fills the remaining space */
-    transition: margin-left 0.3s;
+	margin-left: 16rem; /* Adjust based on sidebar width */
+	padding: 1rem;
+	flex-grow: 1; /* This ensures the content fills the remaining space */
+	transition: margin-left 0.3s;
 }
 
 .sidebar.collapsed + .main-content {
-    margin-left: 5rem;
+	margin-left: 5rem;
 }
 
 /* Footer should stick to the bottom */
 footer {
-    background-color: black;
-    color: white;
-    padding: 1rem;
-    text-align: center;
-    width: 100%;
-    position: relative;
-    transition: margin-left 0.3s;
+	background-color: black;
+	color: white;
+	padding: 1rem;
+	text-align: center;
+	width: 100%;
+	position: relative;
+	transition: margin-left 0.3s;
 }
 
 .maincontainer .footer {
-    margin-left: 16rem; /* Align footer with main content */
+	margin-left: 16rem; /* Align footer with main content */
 }
 
 .sidebar.collapsed + .footer {
-    margin-left: 5rem; /* Adjust footer margin when sidebar is collapsed */
+	margin-left: 5rem; /* Adjust footer margin when sidebar is collapsed */
 }

@@ -1,75 +1,75 @@
 .login-page-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: var(--background-color);
-  padding: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	background-color: var(--background-color);
+	padding: 2rem;
 }
 
 .login-card {
-  width: 22rem;
-  padding: 0.5rem;
+	width: 22rem;
+	padding: 0.5rem;
 }
 
 .login-card-header,
 .login-card-content {
-  text-align: left;
+	text-align: left;
 }
 
 .login-card-title {
-  font-size: 2rem !important;
-  margin-bottom: 1rem;
+	font-size: 2rem !important;
+	margin-bottom: 1rem;
 }
 
 .login-card-description {
-  color: var(--text-muted-color);
-  font-size: 1rem;
+	color: var(--text-muted-color);
+	font-size: 1rem;
 }
 
 .login-input-group {
-  display: grid;
-  gap: 1rem;
+	display: grid;
+	gap: 1rem;
 }
 
 .input-error {
-  border-color: red;
+	border-color: red;
 }
 
 .error-text {
-  color: red;
-  font-size: 0.875rem;
+	color: red;
+	font-size: 0.875rem;
 }
 
 .login-label {
-  font-weight: 600 !important;
-  font-size: 1rem;
+	font-weight: 600 !important;
+	font-size: 1rem;
 }
 
 /* Media query for small screens */
 @media (max-width: 768px) {
-  .login-card {
-    width: 90%;
-    padding: 1.5rem;
-  }
+	.login-card {
+		width: 90%;
+		padding: 1.5rem;
+	}
 
-  .login-card-title {
-    font-size: 2rem;
-  }
+	.login-card-title {
+		font-size: 2rem;
+	}
 
-  .login-input-group {
-    gap: 0.75rem;
-  }
+	.login-input-group {
+		gap: 0.75rem;
+	}
 }
 
 /* Media query for extra small screens */
 @media (max-width: 480px) {
-  .login-card {
-    width: 95%;
-    padding: 1rem;
-  }
+	.login-card {
+		width: 95%;
+		padding: 1rem;
+	}
 
-  .login-card-title {
-    font-size: 1.5rem;
-  }
+	.login-card-title {
+		font-size: 1.5rem;
+	}
 }
