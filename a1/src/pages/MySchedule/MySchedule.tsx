@@ -377,11 +377,6 @@ export default function Component() {
 	};
 
 	const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-		const [isExpanded] = useState<boolean>(() => {
-			// Set the initial state based on the current viewport width
-			return window.innerWidth >= 768;
-		});
-
 		if (!status) return null;
 
 		const colorMap = {
@@ -391,24 +386,18 @@ export default function Component() {
 			Pending: "bg-yellow-200 text-yellow-800",
 		};
 
-		const shortFormMap = {
-			AM: "A",
-			PM: "P",
-			"Full Day": "F",
-			Pending: "P",
-		};
-
-		const displayText = isExpanded ? status : shortFormMap[status];
-
 		return (
 			<Badge
 				variant="secondary"
 				className={`${colorMap[status]} 
-          text-xs sm:text-sm md:text-base 
-          px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 
-          rounded-full cursor-pointer`}
+					text-xs sm:text-sm md:text-base 
+					px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 
+					rounded-full cursor-pointer`}
 			>
-				{displayText}
+				<span className="hidden md:inline">{status}</span>
+				<span className="md:hidden">
+					{status === "Full Day" ? "F" : status[0]}
+				</span>
 			</Badge>
 		);
 	};
