@@ -52,7 +52,8 @@ jobs:
           # Step 1: Stop containers first and wait for them to fully shut down
           cd A1-Remote/a1/microservices &&
           docker-compose down &&
-          
+          docker system prune -f &&
+
           # Wait until all containers are fully down
           while [ "$(docker ps -q)" ]; do
             echo "Waiting for containers to stop..."
