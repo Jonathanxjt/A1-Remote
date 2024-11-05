@@ -46,43 +46,42 @@ jobs:
       run: echo "AWS_URL=${{ secrets.AWS_URL }}" >> $GITHUB_ENV
 
     # bash file uses absolute file path
-    - name: SSH into EC2, pull changes, run tests, and deploy
+    - name: SSH into EC2, stop containers, pull changes, run tests, and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_ELASTIC }} '
-        # Step 1: Navigate to A1-Remote, pull latest changes, and install dependencies
-        cd A1-Remote &&
-        git pull origin main &&
-        python3 -m venv venv &&
-        source venv/bin/activate &&
-        pip install -r requirements.txt &&
-        
-        # Step 2: Stop containers and wait for them to fully shut down
-        cd a1/microservices &&
-        docker-compose down &&
-        
-        # Wait until all containers are fully down
-        while [ "$(docker ps -q)" ]; do
-          echo "Waiting for containers to stop..."
-          sleep 5  # Check every 5 seconds
-        done
-        
-        echo "All containers are down. Running integration tests."
-        
-        # Run coverage and integration tests
-        cd ../.. &&
-        coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
-        coverage xml
-    
-        # Check if the tests passed and proceed to deployment if successful
-        if [ $? -eq 0 ]; then
-          echo "Integration tests passed. Proceeding with deployment."
+          # Step 1: Stop containers first and wait for them to fully shut down
+          cd A1-Remote/a1/microservices &&
+          docker-compose down &&
           
-          # Step 3: Run deploy.sh located in /home/ec2-user if tests pass
-          cd /home/ec2-user &&  # Go to /home/ec2-user directory
-          chmod +x deploy.sh &&
-          bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
-        else
-          echo "Integration tests failed. Deployment aborted."
-          exit 1
-        fi
+          # Wait until all containers are fully down
+          while [ "$(docker ps -q)" ]; do
+            echo "Waiting for containers to stop..."
+            sleep 5  # Check every 5 seconds
+          done
+    
+          echo "All containers are down. Proceeding with pull and setup."
+    
+          # Step 2: Navigate to A1-Remote, pull latest changes, and install dependencies
+          cd ../.. &&
+          git pull origin main &&
+          python3 -m venv venv &&
+          source venv/bin/activate &&
+          pip install -r requirements.txt &&
+          
+          # Step 3: Run integration tests
+          coverage run -m pytest a1/tests/integration --maxfail=1 --disable-warnings -v &&
+          coverage xml
+          
+          # Step 4: Check if the tests passed and proceed to deployment if successful
+          if [ $? -eq 0 ]; then
+            echo "Integration tests passed. Proceeding with deployment."
+            
+            # Step 5: Run deploy.sh located in /home/ec2-user if tests pass
+            cd /home/ec2-user &&  # Go to /home/ec2-user directory
+            chmod +x deploy.sh &&
+            bash -x ./deploy.sh  # Run deploy.sh with debug output to show each command step
+          else
+            echo "Integration tests failed. Deployment aborted."
+            exit 1
+          fi
         '
