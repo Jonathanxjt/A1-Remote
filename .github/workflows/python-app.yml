@@ -63,7 +63,7 @@ jobs:
         # Wait until all containers are fully down
         while [ "$(docker ps -q)" ]; do
           echo "Waiting for containers to stop..."
-          sleep 2  # Check every 2 seconds
+          sleep 5  # Check every 5 seconds
         done
         
         echo "All containers are down. Running integration tests."
