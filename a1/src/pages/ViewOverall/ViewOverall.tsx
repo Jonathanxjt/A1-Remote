@@ -58,8 +58,9 @@ export default function Component() {
 	const [dayLoading, setDayLoading] = useState<boolean>(true); // Add loading state
 
 	useEffect(() => {
+		setDayLoading(true);
 		const fetchData = async () => {
-			setDayLoading(true);
+			
 			await fetchEmployeesInDeptDayView(); // Wait for the fetch to complete
 			setDayLoading(false); // Set loading state to false after fetch completes
 		};
@@ -631,8 +632,9 @@ export default function Component() {
 		startOfWeek.setDate(currentDate.getDate() - daysToMonday);
 
 		useEffect(() => {
+			setLoading(true);
 			const fetchWeekData = async () => {
-				setLoading(true);
+				
 				let data = [];
 				for (let i = 0; i < 5; i++) {
 					const date = startOfWeek;

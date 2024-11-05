@@ -176,7 +176,7 @@ export default function WorkFromHomeRequests() {
 							request.status === "Pending" || request.status === "Approved"
 					);
 
-					// Sort by created_date, oldest first to track order properly
+					// Sort by created_date to determine order of submission
 					const sortedRequests = pendingRequests.sort(
 						(a: Request, b: Request) =>
 							compareAsc(new Date(a.created_date), new Date(b.created_date))
@@ -187,21 +187,38 @@ export default function WorkFromHomeRequests() {
 
 					// Process requests and add exceeded flag
 					const processedRequests = sortedRequests.map((request: Request) => {
-						const weekStart = startOfWeek(new Date(request.created_date), {
-							weekStartsOn: 1,
-						}).getTime();
-
+						const requestDate = new Date(request.request_date);
+						const weekStart = startOfWeek(requestDate, { weekStartsOn: 1 });
+						const weekEnd = endOfWeek(requestDate, { weekStartsOn: 1 });
+						const weekKey = weekStart.getTime();
+						
 						// Get or initialize array of requests for this week
-						const weekArray = weekRequests.get(weekStart) || [];
-						weekArray.push(request);
-						weekRequests.set(weekStart, weekArray);
+						const weekArray = weekRequests.get(weekKey) || [];
+						
+						// Only count requests that fall within this week's boundaries
+						const requestsThisWeek = sortedRequests.filter((r: Request) => {
+							const date = new Date(r.request_date);
+							return isWithinInterval(date, { start: weekStart, end: weekEnd }) &&
+								   r.status === "Pending";
+						});
 
-						// Mark as exceeded if it's pending and comes after 2 previous requests in the same week
+						// Sort requests for this week by created_date
+						requestsThisWeek.sort((a: Request, b: Request) => 
+							compareAsc(new Date(a.created_date), new Date(b.created_date))
+						);
+
+						// Mark as exceeded if this is the third or later pending request for this week
 						if (request.status === "Pending") {
-							request.exceeded = weekArray.length > 2;
+							const requestIndex = requestsThisWeek.findIndex(
+								(r: Request) => r.request_id === request.request_id
+							);
+							request.exceeded = requestIndex >= 2;
 						} else {
 							request.exceeded = false;
 						}
+						console.log(weekArray);
+						weekArray.push(request);
+						weekRequests.set(weekKey, weekArray);
 
 						return request;
 					});
