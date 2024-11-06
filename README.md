@@ -67,6 +67,59 @@ A1-Remote is a modern Work From Home (WFH) management system designed to help or
 - Python 3.8+
 - Modern web browser
 
+## :computer: CI/CD Pipeline
+- **Tool Used:** Github Actions
+- **CI:**
+Configured to run Unit Tests on Github Actions Runner and for Integration Tests to our database (AWS RS) it will SSH into the EC2 instance to run the tests.
+- **CD:**
+It will SSH into EC2 instance first to docker-compose down existing microservices, upon success it will run the deploy.sh file to automatically docker-compose --build.
+### Location of Action .yml file:
+```bash
+cd a1-remote/.github/workflows
+```
+
+### Deploy.sh (Inside EC2 Instance):
+```bash
+#!/bin/bash
+
+# Change directory to where your app's repository is located
+cd /home/ec2-user/A1-Remote  # Use the correct path
+
+# Pull the latest changes from the 'main' branch
+git fetch --all
+git reset --hard origin/main  # Resets local changes and ensures you get the latest from remote
+
+# Navigate to the directory where the docker-compose.yml file is located
+cd /home/ec2-user/A1-Remote/a1/microservices
+
+# Stop and remove existing containers
+docker-compose down
+
+# Check if the docker-compose.yml file has changed since the last deployment
+if [ ! -f .docker_compose_hash ] || [ "$(sha256sum docker-compose.yml | awk '{print $1}')" != "$(cat .docker_compose_hash)" ]; then
+    echo "Changes detected in docker-compose.yml. Rebuilding containers..."
+    # Start containers with the latest changes and build if necessary
+    docker-compose up -d --build
+
+    # Update the stored hash for future checks
+    sha256sum docker-compose.yml | awk '{print $1}' > .docker_compose_hash
+else
+    echo "No changes in docker-compose.yml. Starting containers without rebuild..."
+
+    # Start containers without rebuilding
+    docker-compose up -d
+fi
+echo "Deployment successful!"
+```
+
+### Note on CI/CD Pipeline Stability
+We’ve observed occasional stability issues in our CI/CD pipeline due to limited RAM on our EC2 instance, which operates under AWS’s Free Tier restrictions. (See below where only 60 MB of free memory available after a Docker build.) Before the end of Sprint 3, we experimented with various approaches to improve this stability without exceeding Free Tier limits but are still unable to achieve 100% stability.
+
+If you encounter a timeout while testing our CI/CD script, please let us know so we can reset the EC2 instance. For deployment purposes, everything is configured and ready for Release 1 (tested and deployed for over a week), aside from this rare CI/CD stability issue.
+
+<img width="606" alt="Screenshot 2024-11-05 at 22 33 31" src="https://github.com/user-attachments/assets/27933ffd-5d7b-42a5-8059-1f2f726743e9">
+
+
 ## 🔧 Installation
 
 ### 1. Clone the Repository
@@ -141,10 +194,21 @@ yarn build
 ```
 
 ## 🧪 Testing
-Run tests to ensure everything is working as expected:
-
+Run tests to ensure everything is working as expected :
+First Change your directory to the root of A1-Remote
 ```bash
-python pytest
+pytest --cov=. --cov-report=html:htmlcov
+# To get Coverage in HTML
+open htmlcov/index.html
+```
+
+Test Files can be found on:
+```bash
+# Unit Tests
+cd a1/tests/unit
+
+# Integration Tests
+cd a1/tests/integration
 ```
 
 ## 🔑 Environment Variables
@@ -178,14 +242,24 @@ Replace the placeholders with your database details:
 - `<port>`: Database port (default: 3306)
 - `<database_name>`: Name of your database
 
-Example for local setup:
+Example for local setup (Windows):
 ```env
-DATABASE_URL=mysql+mysqlconnector://root:password123@localhost:3306/a1_database
+DATABASE_URL=mysql+mysqlconnector://root@localhost:3306/a1_database
 ```
 
-Example for Docker:
+Example for local setup (MacOS):
 ```env
-DATABASE_URL=mysql+mysqlconnector://root:password123@host.docker.internal:3306/a1_database
+DATABASE_URL=mysql+mysqlconnector://root:root@localhost:3306/a1_database
+```
+
+Example for Docker (Windows):
+```env
+DATABASE_URL=mysql+mysqlconnector://root@host.docker.internal:3306/a1_database
+```
+
+Example for Docker (MacOS):
+```env
+DATABASE_URL=mysql+mysqlconnector://root:root@host.docker.internal:3306/a1_database
 ```
 ## 👥 Authors
 - **Jonathan Tan** - [GitHub](https://github.com/Jonathanxjt)
